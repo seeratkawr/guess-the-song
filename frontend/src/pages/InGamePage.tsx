@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import '../css/InGamePage.css';
 import Scoreboard from "../components/Scoreboard";
 import GameHeader from '../components/GameHeader';
+import MultipleChoice from '../components/MultipleChoice';
+import SingleChoice from '../components/SingleChoice';
 import { useLocation } from 'react-router-dom';
 
-interface GuessifyProps {}
+interface GuessifyProps { }
 
 const InGamePage: React.FC<GuessifyProps> = () => {
 
@@ -20,26 +22,40 @@ const InGamePage: React.FC<GuessifyProps> = () => {
 
   const location = useLocation();
   const settings = location.state as {
-  rounds: string;
-  guessTime: string;
-  // include other settings later
+    rounds: string;
+    guessTime: string;
+    gameMode: string;
+    // include other settings later
   };
 
   // Round Logic
   const totalRounds = parseInt(settings?.rounds) || 10; // fallback 10
   const roundTime = parseInt(settings?.guessTime) || 30; // fallback 30
+  const isSingleSong = settings?.gameMode?.startsWith('Listening (');
   const [currentRound, setCurrentRound] = useState(1);
   const [timeLeft, setTimeLeft] = useState(roundTime);
   const [isRoundActive, setIsRoundActive] = useState(true);
   const [isIntermission, setIsIntermission] = useState(false);
   const [inviteCode] = useState('ABC123');
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
+  const options = [
+    "SONG 1, SONG 2, SONG 3",
+    "SONG 1, SONG 4, SONG 3",
+    "SONG 2, SONG 5, SONG 3",
+    "SONG 1, SONG 4, SONG 5",
+  ];
+
+  const handleSelect = (index: number) => {
+    setSelectedIndex(index);
+    // Add logic here to check answer / update score
+  };
 
   useEffect(() => {
     // Start the first round automatically
     setIsRoundActive(true);
     setTimeLeft(roundTime);
-    }, []);
+  }, []);
 
   useEffect(() => {
     if (!isRoundActive || isIntermission) return;
@@ -72,17 +88,27 @@ const InGamePage: React.FC<GuessifyProps> = () => {
     }
   }
 
-
   return (
-    <div className="in-game-container">
+    <div className="game-2-container">
       <GameHeader
         roundNumber={`${currentRound}/${totalRounds}`}
         timer={`${timeLeft}`}
         inviteCode={inviteCode}
       />
-      <Scoreboard players={players} />
-      {/* Placeholder for game content */}
-      <div className="game-body">
+      <div className="game-2-body">
+        <Scoreboard players={players} />
+
+        {isSingleSong ? (
+          <SingleChoice
+          // add props for SingleChoice component here
+          />
+        ) : (
+          <MultipleChoice
+            options={options}
+            onSelect={handleSelect}
+            selectedIndex={selectedIndex}
+          />
+        )}
       </div>
     </div>
   );

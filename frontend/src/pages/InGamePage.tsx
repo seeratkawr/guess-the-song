@@ -22,7 +22,10 @@ interface Player {
 const InGamePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { code } = useParams<{ code: string }>(); // room code from URL
+  const { code } = useParams(); // room code from URL
+
+  // Debug logging
+  console.log("InGamePage mounted!", { code, locationState: location.state });
 
   // --- Extract settings safely ---
   const state = location.state as {
@@ -35,6 +38,8 @@ const InGamePage: React.FC = () => {
 
   const playerName = state?.playerName || "You";
   const isHost = state?.isHost || false;
+  
+  console.log("InGamePage - Extracted data:", { playerName, isHost, code });
   
     // --- Socket setup ---
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -377,8 +382,30 @@ const InGamePage: React.FC = () => {
 
   /* ----------------- RENDER ----------------- */
 
+  // Early return for debugging
+  if (!code) {
+    return <div>No room code found in URL</div>;
+  }
+
+  // Debug log for render - must be outside JSX
+  console.log("InGamePage Render:", { 
+    "Have hit this point": true, 
+    code, 
+    playerName, 
+    isHost, 
+    players,
+    playersCount: players.length,
+    isRoundActive,
+    isIntermission
+  });
+
   return (
-    <div className="game-2-container">
+    <div className="game-2-container" style={{ color: "white" }}>
+      {/* Debug info displayed on screen */}
+      <h2>Room: {code}</h2>
+      <h1>Player: {playerName}</h1>
+      <h1>Host: {isHost ? 'Yes' : 'No'}</h1>
+      <p>Players in room: {players.length}</p>
       <AudioControls />
       {isIntermission ? (
         <RoundScoreDisplay

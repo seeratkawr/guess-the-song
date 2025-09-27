@@ -4,7 +4,8 @@ import JoinRoom from './pages/JoinRoom'
 import InGamePage from './pages/InGamePage'
 import SettingsPage from './pages/SettingsPage'
 import MultipleChoiceMode from './pages/MultipleChoiceMode'
-import EndGamePage from './pages/EndGamePage';
+import EndGamePage from './pages/EndGamePage'
+import WaitingRoom from './pages/WaitingRoom';
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<EnterName />} />
         <Route path="/room/:code" element={<InGamePage />} />
+        <Route path="/waiting/:code" element={<WaitingRoom />} />
         <Route path="/lobby" element={<JoinRoom />} />
         <Route path="/create_room" element={<SettingsPage />} />
         <Route path="/game_mode_2" element={<MultipleChoiceMode />} />

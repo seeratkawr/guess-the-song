@@ -39,7 +39,7 @@ const SettingsPage = () => {
 
   // Create room and move to game page, passing player info and settings
     const handleCreateRoom = () => {
-    navigate(`/room/${roomCode}`, { 
+    navigate(`/waiting/${roomCode}`, { 
       state: { 
         ...settings, 
         playerName,

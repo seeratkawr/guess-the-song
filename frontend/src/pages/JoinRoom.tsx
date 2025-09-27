@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import "../css/JoinRoom.css";
 import { songService } from "../services/songServices";
-
 import { useNavigate, useLocation } from "react-router-dom";
+import { isValidRoomCode } from "../utils/roomCode.tsx";
+
 
 interface GuessifyProps {}
 
@@ -23,19 +24,39 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
     navigate("/create_room", { state: { playerName } });
   };
 
-  /* Commented out handleJoinRoom as it is only required for A2
-  const handleJoinRoom = () => {
-    // If you also want JOIN button to go somewhere and preserve the name
-    navigate("/create_room", { state: { playerName } });
+  const handleJoinRoom = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!code.trim()) {
+          alert("Please enter a room code!");
+          return;
+        }
+    
+    if (!playerName) {
+      alert("Please enter your name first!");
+      return;
+    }
+
+    if (!isValidRoomCode(code)) {
+      alert("Invalid room code format! Code should be 6 characters (letters and numbers).");
+      return;
+    }
+
+    // Navigate to the room with the code + name
+    navigate(`/room/${code}`, { 
+      state: { 
+        playerName,
+        isHost: false // Mark this player as not the host
+      } 
+    });
   };
-  */
 
   const handleBackClick = (): void => {
     navigate("/");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setCode(e.target.value.toUpperCase());
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    setCode(value);
   };
 
   return (
@@ -60,9 +81,11 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
             className="guessify-input"
             maxLength={8}
           />
-          <button className="guessify-join-button">
+          <button className="guessify-join-button"             
+          onClick={handleJoinRoom}
+          disabled={!code.trim()}
+          >
             JOIN
-            {/* Note: handleJoinRoom is currently disabled */}
           </button>
         </div>
 

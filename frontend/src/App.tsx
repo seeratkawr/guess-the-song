@@ -12,7 +12,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<EnterName />} />
-        <Route path="/game" element={<InGamePage />} />
+        <Route path="/room/:code" element={<InGamePage />} />
         <Route path="/lobby" element={<JoinRoom />} />
         <Route path="/create_room" element={<SettingsPage />} />
         <Route path="/game_mode_2" element={<MultipleChoiceMode />} />

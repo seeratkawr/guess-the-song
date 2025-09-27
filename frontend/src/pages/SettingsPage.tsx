@@ -1,7 +1,8 @@
 import Settings from "../components/Settings";
 import "../css/SettingsPage.css";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { generateRoomCode } from "../utils/roomCode.tsx";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -9,6 +10,14 @@ const SettingsPage = () => {
 
   // Retrieve player name from previous page (fallback: "You")
   const playerName = location.state?.playerName || "You";
+
+  const [roomCode, setRoomCode] = useState<string>("");
+
+  useEffect(() => {
+    const code = generateRoomCode();
+    setRoomCode(code);
+  }, []);
+
 
   // Game settings state (default values)
   const [settings, setSettings] = useState({
@@ -29,9 +38,16 @@ const SettingsPage = () => {
   };
 
   // Create room and move to game page, passing player info and settings
-  const handleCreateRoom = () => {
-    navigate("/game", { state: { ...settings, playerName } });
+    const handleCreateRoom = () => {
+    navigate(`/room/${roomCode}`, { 
+      state: { 
+        ...settings, 
+        playerName,
+        isHost: true // Mark this player as the host
+      } 
+    });
   };
+
 
   return (
     <div className="settings-page">
@@ -50,7 +66,7 @@ const SettingsPage = () => {
           <div className="game-code-section">
             <span className="invite-text">INVITE CODE:</span>
             <button className="game-code-button" onClick={handleGameCodeClick}>
-              <span className="code-text">ABC123</span>
+              <span className="code-text">{roomCode || "..."}</span>
               <span className="copy-icon">📋</span>
             </button>
           </div>

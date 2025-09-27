@@ -4,6 +4,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { createServer } from "http";
+import { Server } from "socket.io"; 
 import kpopRoutes from "./routes/kpopRoutes.js";
 
 dotenv.config();
@@ -24,6 +26,34 @@ app.use((err, _req, res, _next) => {
 });
 
 const port = process.env.PORT || 8080;
+
+// create HTTP server
+const httpServer = createServer(app);
+
+// attach Socket.IO
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*", // allow React frontend
+    methods: ["GET", "POST"],
+  },
+});
+
+// handle connections
+io.on("connection", (socket) => {
+  console.log("New client connected:", socket.id);
+
+  // join room event
+  socket.on("join", ({ code, playerName }) => {
+    socket.join(code);
+    console.log(`${playerName} joined room ${code}`);
+    io.to(code).emit("player-joined", { playerName });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
 app.listen(port, () =>
   console.log(`Server running at http://localhost:${port}`)
 );

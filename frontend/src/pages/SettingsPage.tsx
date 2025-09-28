@@ -3,6 +3,9 @@ import "../css/SettingsPage.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { generateRoomCode } from "../utils/roomCode.tsx";
+import type { GameSettings } from "../components/Settings";
+import { PlayerCount } from "../components/Settings";
+import { io } from "socket.io-client";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -20,8 +23,8 @@ const SettingsPage = () => {
 
 
   // Game settings state (default values)
-  const [settings, setSettings] = useState({
-    players: "Single Player",
+  const [settings, setSettings] = useState<GameSettings>({
+    amountOfPlayers: PlayerCount['Single Player'],
     guessType: "Guess Song",
     gameMode: "Single Song",
     rounds: "10 Rounds",
@@ -39,13 +42,24 @@ const SettingsPage = () => {
 
   // Create room and move to game page, passing player info and settings
     const handleCreateRoom = () => {
-    navigate(`/waiting/${roomCode}`, { 
-      state: { 
-        ...settings, 
-        playerName,
-        isHost: true // Mark this player as the host
-      } 
-    });
+
+      // create socket
+      const socketUrl = "http://localhost:8080";
+      const socket = io(socketUrl);
+
+      socket.on("room-created", () => {
+        navigate(`/waiting/${roomCode}`, {
+          state: {
+            playerName,
+            isHost: true, // Mark this player as the host
+          }
+        });
+      });
+
+      socket.on("connect", () => {
+        console.log("🔌 Connected to server with ID:", socket.id);
+        socket.emit("create-room", { code: roomCode, settings, host: playerName });
+      });
   };
 
 

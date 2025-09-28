@@ -47,7 +47,7 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
     navigate(`/waiting/${code}`, { 
       state: { 
         playerName,
-        isHost: false // Mark this player as not the host
+        isHost: false
       } 
     });
   };

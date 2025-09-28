@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
 
+const url = import.meta.env.VITE_SOCKET_URL;
+console.log('VITE ENV SOCKET URL:', url);
+
 const WaitingRoom: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -10,32 +13,52 @@ const WaitingRoom: React.FC = () => {
   const state = location.state as {
     playerName?: string;
     isHost?: boolean;
+    socketId?: string;
   };
+
+  // console.log("WaitingRoom state:", state);
   
   const playerName = state?.playerName || "Player";
   const isHost = state?.isHost || false;
   
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [players, setPlayers] = useState<string[]>([playerName]);
+  const [players, setPlayers] = useState<string[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
+  const [amountOfPlayersInRoom, setAmountOfPlayersInRoom] = useState(0);
 
-  // Debug logging
-  console.log("WaitingRoom mounted:", { code, playerName, isHost });
 
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+
+    console.log('HERE')
+
+    const socketUrl = "http://localhost:8080";
     const newSocket = io(socketUrl);
     setSocket(newSocket);
-
-    // Join the room
     newSocket.emit("join", { code, playerName });
 
     // Listen for updated player list (includes all current players)
     newSocket.on("players-updated", ({ players: updatedPlayers }) => {
+      console.log("👥 Players updated:", updatedPlayers);
       setPlayers(updatedPlayers);
     });
 
-    // Listen for game start from host
+    // Handle join errors (room full, duplicate name, etc.)
+    newSocket.on("join-error", ({ message }) => {
+      console.log("❌ Join error:", message);
+      alert(message);
+      // Navigate back to lobby
+      navigate('/lobby', { state: { playerName } });
+    });
+
+    // Handle successful join
+    newSocket.on("join-success", ({ roomCode, playerName: joinedPlayer, players: roomPlayers, amountOfPlayersInRoom }) => {
+      console.log("✅ Successfully joined room:", roomCode, "as", joinedPlayer);
+      console.log("Room players:", roomPlayers);
+      console.log("Amount of players in room:", amountOfPlayersInRoom);
+
+      setAmountOfPlayersInRoom(amountOfPlayersInRoom);
+    });
+
     newSocket.on("game-started", (gameSettings) => {
       setGameStarted(true);
       // Navigate to actual game with settings
@@ -50,9 +73,11 @@ const WaitingRoom: React.FC = () => {
 
     // Handle connection events
     newSocket.on("connect", () => {
+      console.log("🔌 Connected to server with ID:", newSocket.id);
     });
 
     newSocket.on("disconnect", () => {
+      console.log("🔌 Disconnected from server");
     });
 
     return () => {
@@ -61,6 +86,7 @@ const WaitingRoom: React.FC = () => {
   }, [code, playerName, navigate]);
 
   const handleStartGame = () => {
+    //TODO: Validate enough players, settings, etc.
     if (socket && isHost) {
       // Host starts the game with default settings
       const gameSettings = {
@@ -115,7 +141,7 @@ const WaitingRoom: React.FC = () => {
           borderRadius: '10px', 
           margin: '20px 0' 
         }}>
-          <h3>Players in Room ({players.length}):</h3>
+          <h3>Players in Room ({players.length}/{amountOfPlayersInRoom}):</h3>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {players.map((player, index) => (
               <li key={index} style={{ 

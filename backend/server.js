@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io"; 
 import kpopRoutes from "./routes/kpopRoutes.js";
+import { console } from "inspector";
 
 dotenv.config();
 
@@ -41,34 +42,83 @@ const io = new Server(httpServer, {
 // Store room data
 const rooms = new Map();
 
-// handle connections
+//  handle connections
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
+  socket.on("create-room", ({ code, settings, host }) => {
+
+    // Initialize room if it doesn't exist (with default settings)
+    if (!rooms.has(code)) {
+      console.log(`Creating new room ${code} with default settings`);
+      rooms.set(code, { 
+        players: [], 
+        maxPlayers: settings.amountOfPlayers || 8, // default max players
+        settings,
+        host
+      });
+
+      socket.emit("room-created");
+    }
+  });
+
   // join room event
   socket.on("join", ({ code, playerName }) => {
+    console.log(`${playerName} attempting to join room ${code}`);
+
+    const room = rooms.get(code);
+
+    if(!room) {
+      socket.emit("join-error", { 
+        message: `Room ${code} doesn't exist!` 
+      });
+      return;
+    }
+    
+    // Check if room is full
+    if (room.players.length >= room.maxPlayers) {
+      console.log(`${playerName} tried to join full room ${code} (${room.players.length}/${room.maxPlayers})`);
+      socket.emit("join-error", { 
+        message: `Room is full! (${room.players.length}/${room.maxPlayers} players)` 
+      });
+      return;
+    }
+    
+    // Check for duplicate names
+    if (room.players.includes(playerName)) {
+      console.log(`${playerName} tried to join room ${code} but name already exists`);
+      socket.emit("join-error", { 
+        message: `Player name "${playerName}" is already in this room!` 
+      });
+      return;
+    }
+    
+    // Join the room
     socket.join(code);
     
     // Store player info for cleanup
     socket.playerName = playerName;
     socket.roomCode = code;
     
-    // Initialize room if it doesn't exist
-    if (!rooms.has(code)) {
-      rooms.set(code, { players: [] });
-    }
+    // Add player to room
+    room.players.push(playerName);
     
-    const room = rooms.get(code);
-    
-    // Add player if not already in room
-    if (!room.players.includes(playerName)) {
-      room.players.push(playerName);
-    }
-    
-    console.log(`${playerName} joined room ${code}. Players:`, room.players);
+    console.log(`${playerName} joined room ${code}. Players (${room.players.length}/${room.maxPlayers}):`, room.players);
     
     // Send updated player list to everyone in the room
-    io.to(code).emit("players-updated", { players: room.players });
+    io.to(code).emit("players-updated", { 
+      players: room.players, 
+      maxPlayers: room.maxPlayers 
+    });
+    
+    // Send success confirmation to the joining player
+    socket.emit("join-success", { 
+      roomCode: code, 
+      playerName,
+      players: room.players,
+      maxPlayers: room.maxPlayers,
+      amountOfPlayersInRoom: room.settings.amountOfPlayers // default to 8 if not set,
+    });
   });
 
   // host starts game event
@@ -89,7 +139,10 @@ io.on("connection", (socket) => {
         console.log(`${socket.playerName} left room ${socket.roomCode}. Remaining players:`, room.players);
         
         // Update remaining players
-        io.to(socket.roomCode).emit("players-updated", { players: room.players });
+        io.to(socket.roomCode).emit("players-updated", { 
+          players: room.players, 
+          maxPlayers: room.maxPlayers 
+        });
         
         // Clean up empty rooms
         if (room.players.length === 0) {

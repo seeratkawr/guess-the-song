@@ -20,6 +20,8 @@ const SingleChoice: React.FC<SingleChoiceProps> = ({
   const [guess, setGuess] = useState("");              // User input guess
   const [showWrongMessage, setShowWrongMessage] = useState(false); // Flag to show "wrong" feedback
 
+  console.log('SingleChoice currentSong:', currentSong);
+
   /** Create a masked version of the title (blanks only, no punctuation/featuring info) */
   const createBlanks = (text: string): string => {
     let mainTitle = text

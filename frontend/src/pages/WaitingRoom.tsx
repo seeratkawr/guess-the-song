@@ -23,13 +23,11 @@ const WaitingRoom: React.FC = () => {
   
   const [socket, setSocket] = useState<Socket | null>(null);
   const [players, setPlayers] = useState<string[]>([]);
-  const [gameStarted, setGameStarted] = useState(false);
   const [amountOfPlayersInRoom, setAmountOfPlayersInRoom] = useState(0);
+  const [gameSettings, setGameSettings] = useState<any>(null); // Store game settings received from server
 
 
   useEffect(() => {
-
-    console.log('HERE')
 
     const socketUrl = "http://localhost:8080";
     const newSocket = io(socketUrl);
@@ -59,21 +57,22 @@ const WaitingRoom: React.FC = () => {
       setAmountOfPlayersInRoom(amountOfPlayersInRoom);
     });
 
-    newSocket.on("game-started", (gameSettings) => {
-      setGameStarted(true);
-      // Navigate to actual game with settings
-      navigate(`/room/${code}`, {
-        state: {
-          ...gameSettings,
-          playerName,
-          isHost: false
-        }
-      });
-    });
-
     // Handle connection events
     newSocket.on("connect", () => {
-      console.log("🔌 Connected to server with ID:", newSocket.id);
+      console.log("🔌 WAITING ROOM Connected to server with ID:", newSocket.id);
+      newSocket.emit("get-room-data", code );
+
+      newSocket.on("game-started", ( settings ) => {  
+        console.log("Game started event received, settings: ", settings);
+        // Navigate to actual game 
+        navigate(`/room/${code}`, {
+          state: {
+            ...settings,
+            playerName,
+            isHost
+          }
+        });
+      });
     });
 
     newSocket.on("disconnect", () => {
@@ -88,26 +87,9 @@ const WaitingRoom: React.FC = () => {
   const handleStartGame = () => {
     //TODO: Validate enough players, settings, etc.
     if (socket && isHost) {
-      // Host starts the game with default settings
-      const gameSettings = {
-        players: "Multiplayer",
-        guessType: "Guess Song", 
-        gameMode: "Single Song",
-        rounds: "10 Rounds",
-        guessTime: "30 sec",
-      };
       
-      console.log("Host starting game with settings:", gameSettings);
-      socket.emit("start-game", { code, settings: gameSettings });
-      
-      // Navigate host to game immediately
-      navigate(`/room/${code}`, {
-        state: {
-          ...gameSettings,
-          playerName,
-          isHost: true
-        }
-      });
+      console.log("Host starting game");
+      socket.emit("start-game", { code });
     }
   };
 

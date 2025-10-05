@@ -19,27 +19,19 @@ interface Player {
   correctAnswers: number;
 }
 
+const getTimeAsNumber = (timeStr: string): number => {
+  return parseInt(timeStr.replace(' sec', ''));
+};
+
 const InGamePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { code } = useParams(); // room code from URL
 
-  // Debug logging
-  console.log("InGamePage mounted!", { code, locationState: location.state });
-
   // --- Extract settings safely ---
-  const state = location.state as {
-    playerName?: string;
-    rounds?: string;
-    guessTime?: string;
-    gameMode?: string;
-    isHost?: boolean;
-  };
+  const state = location.state 
 
-  const playerName = state?.playerName || "You";
-  const isHost = state?.isHost || false;
-  
-  console.log("InGamePage - Extracted data:", { playerName, isHost, code });
+  const { playerName, isHost, rounds: totalRounds, guessTime: roundTime, gameMode } = state;
   
     // --- Socket setup ---
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -54,13 +46,11 @@ const InGamePage: React.FC = () => {
   });
 
   // --- Game Settings ---
-  const totalRounds = parseInt(state?.rounds || "10");
-  const roundTime = parseInt(state?.guessTime || "30");
-  const isSingleSong = state?.gameMode === "Single Song";
+  const isSingleSong = gameMode === "Single Song";
 
   // --- Round State ---
   const [currentRound, setCurrentRound] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(parseInt(state?.guessTime || "30"));
+  const [timeLeft, setTimeLeft] = useState(getTimeAsNumber(roundTime));
   const [roundStartTime, setRoundStartTime] = useState<number | null>(null);
   const [isRoundActive, setIsRoundActive] = useState(false);
   const [isIntermission, setIsIntermission] = useState(false);
@@ -84,33 +74,25 @@ const InGamePage: React.FC = () => {
 
   /* ----------------- SOCKET CONNECTION ----------------- */
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+    const socketUrl = "http://localhost:8080"; // import.meta.env.VITE_SOCKET_URL || 
     const newSocket = io(socketUrl);
     setSocket(newSocket);
+    newSocket.emit("get-room-players", code );
 
-    // Join the room
-    newSocket.emit("join", { code, playerName });
-
-    // Initialize players list with current player
-    setPlayers([{
-      name: playerName,
-      points: 0,
-      previousPoints: 0,
-      correctAnswers: 0,
-    }]);
-
-    // Update when players join
-    newSocket.on("player-joined", ({ playerName: newPlayerName }) => {
-      setPlayers((prev) => {
-        // Check if player already exists
-        if (prev.some(p => p.name === newPlayerName)) {
-          return prev;
+    // Listen for players joining/leaving the room
+    newSocket.on("room-players", ( players ) => {
+      console.log("MMM 👥 Players updated in game:", players);
+      // Convert player names to Player objects with initial scores
+      const playerObjects = players.map((name: string) => (
+        {
+          name,
+          points: 0,
+          previousPoints: 0,
+          correctAnswers: 0,
         }
-        return [
-          ...prev,
-          { name: newPlayerName, points: 0, previousPoints: 0, correctAnswers: 0 },
-        ];
-      });
+      ));
+      console.log("Player objects:", playerObjects);
+      setPlayers(playerObjects);
     });
 
     // Host starts round → everyone gets the same song
@@ -121,12 +103,16 @@ const InGamePage: React.FC = () => {
       const roundStart = startTime || Date.now();
       setRoundStartTime(roundStart);
       setIsRoundActive(true);
-      setTimeLeft(parseInt(state?.guessTime || "30"));
+      setTimeLeft(getTimeAsNumber(roundTime));
     });
 
-    // Score update
+    // Score update - this will override the initial scores when available
     newSocket.on("score-update", (updatedPlayers: Player[]) => {
-      setPlayers(updatedPlayers);
+      console.log("Score update received:", updatedPlayers);
+      // Sort players by points (highest first)
+      const sortedPlayers = [...updatedPlayers].sort((a, b) => b.points - a.points);
+      setPlayers(sortedPlayers);
+      
       // Update current player state from the players list
       const currentPlayer = updatedPlayers.find(p => p.name === playerName);
       if (currentPlayer) {
@@ -137,7 +123,7 @@ const InGamePage: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [code, playerName, state?.guessTime]);
+  }, [code, playerName]);
 
  /* ----------------- ROUND LOGIC ----------------- */
   useEffect(() => {
@@ -202,11 +188,15 @@ const InGamePage: React.FC = () => {
 
   // Add points and optionally increment correctAnswers
   const addPointsToPlayer = (points: number, correct: boolean = false) => {
+    // Calculate new totals
+    const newPoints = player.points + points;
+    const newCorrectAnswers = correct ? player.correctAnswers + 1 : player.correctAnswers;
+
     // Update the current player's state
     setPlayer(prev => ({
       ...prev,
-      points: prev.points + points,
-      correctAnswers: correct ? prev.correctAnswers + 1 : prev.correctAnswers,
+      points: newPoints,
+      correctAnswers: newCorrectAnswers,
     }));
 
     // Update the players list
@@ -214,19 +204,19 @@ const InGamePage: React.FC = () => {
       p.name === playerName 
         ? {
             ...p,
-            points: p.points + points,
-            correctAnswers: correct ? p.correctAnswers + 1 : p.correctAnswers,
+            points: newPoints,
+            correctAnswers: newCorrectAnswers,
           }
         : p
     ));
 
-    // Emit score update to server
+    // Emit score update to server with total points
     if (socket) {
-      socket.emit("score-update", {
+      socket.emit("update-score", {
         code,
         playerName,
-        points: points,
-        correct: correct
+        points: newPoints,
+        correctAnswers: newCorrectAnswers
       });
     }
   };
@@ -287,7 +277,7 @@ const InGamePage: React.FC = () => {
   const handleContinueToNextRound = () => {
     if (currentRound < totalRounds) {
       setCurrentRound(r => r + 1);
-      setTimeLeft(roundTime);
+      setTimeLeft(getTimeAsNumber(roundTime));
       setIsRoundActive(true);
       setIsIntermission(false);
       setSelectedIndex(null);
@@ -343,7 +333,7 @@ const InGamePage: React.FC = () => {
 
     // Reset round state
     setIsRoundActive(true);
-    setTimeLeft(roundTime);
+    setTimeLeft(getTimeAsNumber(roundTime));
     setRoundStartTime(Date.now());
     setHasGuessedCorrectly(false);
     setHasSelectedCorrectly(false);
@@ -375,7 +365,7 @@ const InGamePage: React.FC = () => {
       return;
     }
 
-    const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    const timer = setTimeout(() => setTimeLeft((t: number) => t - 1), 1000);
     return () => clearTimeout(timer);
   }, [timeLeft, isRoundActive, isIntermission]);
 
@@ -387,25 +377,11 @@ const InGamePage: React.FC = () => {
     return <div>No room code found in URL</div>;
   }
 
-  // Debug log for render - must be outside JSX
-  console.log("InGamePage Render:", { 
-    "Have hit this point": true, 
-    code, 
-    playerName, 
-    isHost, 
-    players,
-    playersCount: players.length,
-    isRoundActive,
-    isIntermission
-  });
-
   return (
     <div className="game-2-container" style={{ color: "white" }}>
       {/* Debug info displayed on screen */}
-      <h2>Room: {code}</h2>
       <h1>Player: {playerName}</h1>
       <h1>Host: {isHost ? 'Yes' : 'No'}</h1>
-      <p>Players in room: {players.length}</p>
       <AudioControls />
       {isIntermission ? (
         <RoundScoreDisplay
@@ -422,7 +398,7 @@ const InGamePage: React.FC = () => {
         <>
           <GameHeader
             roundNumber={`${currentRound}/${totalRounds}`}
-            timer={`${timeLeft}`}
+            timer={`${timeLeft} sec`}
             inviteCode={inviteCode}
           />
           <div className="game-2-body">

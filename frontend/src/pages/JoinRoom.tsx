@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../css/JoinRoom.css";
 import { songService } from "../services/songServices";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -16,9 +16,6 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
   
   const handleCreateRoom = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    songService.fetchRandomKpop().then((songs) => {
-      console.log("Fetched songs", songs);
-    });
 
     // Pass playerName along to SettingsPage
     navigate("/create_room", { state: { playerName } });
@@ -60,6 +57,12 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
     const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     setCode(value);
   };
+
+  useEffect(() => {
+    songService.fetchRandomKpop().then((songs) => {
+      console.log("Fetched songs", songs);
+    });
+  }, []);
 
   return (
     <div className="guessify-container">

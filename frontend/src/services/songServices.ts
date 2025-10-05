@@ -85,11 +85,16 @@ export default class SongService {
 
   // --- Single-song controls ---
   playSong(index: number = this.currentIndex) {
+    console.log("Playing song at index:", index);
+    console.log("SONGS:", this.cachedSongs);
+
     if (!this.cachedSongs.length) return;
     this.stopSong();
 
     this.currentIndex = index;
     const song = this.cachedSongs[this.currentIndex];
+    console.log("Playing song:", song);
+
     if (!song.previewUrl) return;
 
     this.currentAudio = new Audio(song.previewUrl);

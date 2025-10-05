@@ -47,8 +47,9 @@ const SettingsPage = () => {
       const socketUrl = "http://localhost:8080";
       const socket = io(socketUrl);
 
-      socket.on("room-created", () => {
-        navigate(`/waiting/${roomCode}`, {
+      socket.on("room-created", ({ code, rooms }) => {
+        console.log("Room created successfully with code:", code, 'in ROOMS:', rooms);
+        navigate(`/waiting/${code}`, {
           state: {
             playerName,
             isHost: true, // Mark this player as the host

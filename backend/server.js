@@ -203,6 +203,24 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Handle host continuing to next round
+  socket.on("host-continue-round", ({ code, nextRound, totalRounds }) => {
+    console.log(`Host in room ${code} continuing to round ${nextRound}`);
+    
+    // Emit to all players in the room (including host)
+    socket.to(code).emit("continue-to-next-round", { nextRound });
+    socket.emit("continue-to-next-round", { nextRound }); // Also send to host
+  });
+
+  // Handle host ending the game
+  socket.on("host-end-game", ({ code }) => {
+    console.log(`Host in room ${code} ending the game`);
+    
+    // Navigate all players to end game page
+    socket.to(code).emit("navigate-to-end-game");
+    socket.emit("navigate-to-end-game"); // Also send to host
+  });
+
   // host starts game event
   socket.on("start-game", ({ code }) => {
     socket.join(code);

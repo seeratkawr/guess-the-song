@@ -38,8 +38,6 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
       alert("Invalid room code format! Code should be 6 characters (letters and numbers).");
       return;
     }
-
-    // console.log("✅ All checks passed! Navigating to waiting room with:", { code, playerName, isHost: false });
     // Navigate to waiting room first, then host will start the game
     navigate(`/waiting/${code}`, { 
       state: { 

@@ -109,12 +109,36 @@ const InGamePage: React.FC = () => {
       }
     });
 
+    // Host continues to next round - all players advance
+  socket.on("continue-to-next-round", ({ nextRound }) => {
+    console.log(`Host advanced all players to round ${nextRound}`);
+    setCurrentRound(nextRound);
+    setTimeLeft(getTimeAsNumber(roundTime));
+    setIsRoundActive(true);
+    setIsIntermission(false);
+    setSelectedIndex(null);
+    setHasGuessedCorrectly(false);
+    setHasSelectedCorrectly(false);
+    setShowCorrectAnswer(false);
+    setIsTimeUp(false);
+  });
+
+  // Host ends game - all players navigate to end game page
+  socket.on("navigate-to-end-game", () => {
+    console.log("Host ended the game, navigating all players to end game page");
+    navigate("/end_game", {
+      state: { code }
+    });
+  });
+
     return () => {
       socket.off("room-players-scores");
       socket.off("round-start");
       socket.off("score-update");
+      socket.off("continue-to-next-round");
+      socket.off("navigate-to-end-game");
     };
-  }, [code, playerName]);
+  }, [code, playerName, navigate, roundTime]);
 
  /* ----------------- ROUND LOGIC ----------------- */
   useEffect(() => {
@@ -267,22 +291,38 @@ const InGamePage: React.FC = () => {
   }
 
   // Continue to next round or navigate to end game screen
-  const handleContinueToNextRound = () => {
+const handleContinueToNextRound = () => {
+  // Only the host should emit the continue event
+  if (isHost && socket) {
     if (currentRound < totalRounds) {
-      setCurrentRound(r => r + 1);
-      setTimeLeft(getTimeAsNumber(roundTime));
-      setIsRoundActive(true);
-      setIsIntermission(false);
-      setSelectedIndex(null);
-    } else {
-      // Navigate to end game page
-      navigate("/end_game", {
-        state: { code }
+      // Emit event to advance all players to next round
+      socket.emit("host-continue-round", { 
+        code, 
+        nextRound: currentRound + 1,
+        totalRounds 
       });
+    } else {
+      // Emit event to navigate all players to end game
+      socket.emit("host-end-game", { code });
     }
-  };
-
+  }
   
+  // Local state update (will be overridden by socket event for consistency)
+  if (currentRound < totalRounds) {
+    setCurrentRound(r => r + 1);
+    setTimeLeft(getTimeAsNumber(roundTime));
+    setIsRoundActive(true);
+    setIsIntermission(false);
+    setSelectedIndex(null);
+  } else {
+    // Navigate to end game page
+    navigate("/end_game", {
+      state: { code }
+    });
+  }
+};
+
+
   /* ----------------- EFFECTS ----------------- */ 
 
   // Subscribe to song changes
@@ -365,10 +405,6 @@ const InGamePage: React.FC = () => {
 
   return (
     <div className="game-2-container" style={{ color: "white" }}>
-      {/* Debug info displayed on screen */}
-      <h1>Player: {playerName}</h1>
-      <h1>Host: {isHost ? 'Yes' : 'No'}</h1>
-      <AudioControls />
       {isIntermission ? (
         <RoundScoreDisplay
           players={players}
@@ -379,6 +415,7 @@ const InGamePage: React.FC = () => {
           correctAnswer={isSingleSong ? currentSong?.title : correctAnswer}
           playerGotCorrect={isSingleSong ? hasGuessedCorrectly : hasSelectedCorrectly}
           isTimeUp={isTimeUp}
+          isHost={isHost}
         />
       ) : (
         <>
@@ -388,7 +425,6 @@ const InGamePage: React.FC = () => {
             inviteCode={inviteCode}
           />
           <div className="game-2-body">
-            <Scoreboard players={players} />
             {isSingleSong ? (
               <SingleChoice
                 onCorrectGuess={handleCorrectGuess}

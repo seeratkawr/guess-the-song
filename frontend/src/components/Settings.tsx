@@ -18,16 +18,33 @@ export const PlayerCount = {
   '8 Players': 8
 } as const;
 
+export const RoundsCount = {
+  '5 Rounds': 5,
+  '10 Rounds': 10,
+  '15 Rounds': 15,
+  '20 Rounds': 20
+} as const;
+
 // Type for player count keys
 export type PlayerCountKey = keyof typeof PlayerCount;
+export type RoundsCountKey = keyof typeof RoundsCount;
 
 // Helper function to get integer player count from string
 export const getPlayerCount = (playerString: string): number => {
   return PlayerCount[playerString as PlayerCountKey] || 1;
 };
 
+export const getRoundsCount = (roundsString: string): number => {
+  return RoundsCount[roundsString as RoundsCountKey] || 10;
+};
+
 export const getPlayerCountString = (count: number): string => {
   const entry = Object.entries(PlayerCount).find(([, value]) => value === count);
+  return entry ? entry[0] : "Unknown";
+};
+
+export const getRoundsCountString = (count: number): string => {
+  const entry = Object.entries(RoundsCount).find(([, value]) => value === count);
   return entry ? entry[0] : "Unknown";
 };
 
@@ -36,7 +53,7 @@ export interface GameSettings {
   amountOfPlayers: number;
   guessType: string;
   gameMode: string;
-  rounds: string;
+  rounds: number;
   guessTime: string;
 }
 
@@ -67,7 +84,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
   const handleChange = (key: keyof GameSettings, value: string) => {
     if (key === 'amountOfPlayers' && (value in PlayerCount)) {
       setSettings(prev => ({ ...prev, [key]: getPlayerCount(value) }));
-      console.log("Updated amountOfPlayers to:", getPlayerCount(value));
+    }
+    else if (key === 'rounds' && (value in RoundsCount)) {
+      setSettings(prev => ({ ...prev, [key]: getRoundsCount(value) }));
     }
     else {
       setSettings(prev => ({ ...prev, [key]: value }));
@@ -75,25 +94,31 @@ const Settings: React.FC<SettingsProps> = ({ settings, setSettings }) => {
   };
 
   // Reusable dropdown renderer method
-  const renderDropdown = (key: keyof typeof options) => (
-    <div className="setting-row" key={key}>
-      <div className="setting-info">
-        <div className="setting-icon">
-          <img src={icons[key].src} alt={icons[key].label} />
-        </div>
-        <span className="setting-label">{icons[key].label}</span>
+const renderDropdown = (key: keyof typeof options) => (
+  <div className="setting-row" key={key}>
+    <div className="setting-info">
+      <div className="setting-icon">
+        <img src={icons[key].src} alt={icons[key].label} />
       </div>
-      <select
-        className="setting-dropdown"
-        value={key === 'amountOfPlayers' ?  getPlayerCountString(settings[key]) : settings[key]}
-        onChange={(e) => handleChange(key, e.target.value)}
-      >
-        {options[key].map(option => (
-          <option key={option} value={option}>{option}</option>
-        ))}
-      </select>
+      <span className="setting-label">{icons[key].label}</span>
     </div>
-  );
+    <select
+      className="setting-dropdown"
+      value={
+        key === 'amountOfPlayers' 
+          ? getPlayerCountString(settings[key]) 
+          : key === 'rounds' 
+          ? getRoundsCountString(settings[key]) 
+          : settings[key]
+      }
+      onChange={(e) => handleChange(key, e.target.value)}
+    >
+      {options[key].map(option => (
+        <option key={option} value={option}>{option}</option>
+      ))}
+    </select>
+  </div>
+);
 
   return (
     <div className="settings-container">

@@ -32,8 +32,8 @@ const InGamePage: React.FC = () => {
   const state = location.state 
 
   const { playerName, isHost, rounds: totalRounds, guessTime: roundTime, gameMode } = state;
-  
-    // --- Socket setup ---
+
+  // --- Socket setup ---
   const [socket, setSocket] = useState<Socket | null>(null);
 
   // --- Player State ---
@@ -77,23 +77,17 @@ const InGamePage: React.FC = () => {
     const socketUrl = "http://localhost:8080"; // import.meta.env.VITE_SOCKET_URL || 
     const newSocket = io(socketUrl);
     setSocket(newSocket);
-    newSocket.emit("get-room-players", code );
 
-    // Listen for players joining/leaving the room
-    newSocket.on("room-players", ( players ) => {
-      console.log("MMM 👥 Players updated in game:", players);
-      // Convert player names to Player objects with initial scores
-      const playerObjects = players.map((name: string) => (
-        {
-          name,
-          points: 0,
-          previousPoints: 0,
-          correctAnswers: 0,
-        }
-      ));
-      console.log("Player objects:", playerObjects);
-      setPlayers(playerObjects);
-    });
+    newSocket.on("connect", () => {
+
+      newSocket.emit("get-room-players-scores", code );
+
+      // Listen for players joined the room
+      newSocket.on("room-players-scores", ( playerScores ) => {
+        console.log("Here Players with Scores:", playerScores);
+        setPlayers(playerScores);
+      });
+    })
 
     // Host starts round → everyone gets the same song
     newSocket.on("round-start", ({ song, choices, answer, startTime }) => {
@@ -120,9 +114,9 @@ const InGamePage: React.FC = () => {
       }
     });
 
-    return () => {
-      newSocket.disconnect();
-    };
+    // return () => {
+    //   newSocket.disconnect();
+    // };
   }, [code, playerName]);
 
  /* ----------------- ROUND LOGIC ----------------- */
@@ -275,6 +269,7 @@ const InGamePage: React.FC = () => {
 
   // Continue to next round or navigate to end game screen
   const handleContinueToNextRound = () => {
+    console.log('currentRound:', currentRound, 'totalRounds:', totalRounds);
     if (currentRound < totalRounds) {
       setCurrentRound(r => r + 1);
       setTimeLeft(getTimeAsNumber(roundTime));
@@ -284,14 +279,7 @@ const InGamePage: React.FC = () => {
     } else {
       // Navigate to end game page
       navigate("/end_game", {
-        state: {
-          players: players.map(p => ({
-            name: p.name,
-            points: p.points,
-            correctAnswers: p.correctAnswers,
-            totalRounds: totalRounds, 
-          })),
-        },
+        state: { code }
       });
     }
   };

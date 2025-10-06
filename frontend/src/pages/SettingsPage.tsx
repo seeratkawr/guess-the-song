@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { generateRoomCode } from "../utils/roomCode.tsx";
 import type { GameSettings } from "../components/Settings";
 import { PlayerCount } from "../components/Settings";
+import { RoundsCount } from "../components/Settings";
 import { io } from "socket.io-client";
 
 const SettingsPage = () => {
@@ -27,7 +28,7 @@ const SettingsPage = () => {
     amountOfPlayers: PlayerCount['Single Player'],
     guessType: "Guess Song",
     gameMode: "Single Song",
-    rounds: "10 Rounds",
+    rounds: RoundsCount["10 Rounds"],
     guessTime: "15 sec",
   });
 
@@ -58,7 +59,7 @@ const SettingsPage = () => {
       });
 
       socket.on("connect", () => {
-        console.log("🔌 Connected to server with ID:", socket.id);
+        // console.log("🔌 Connected to server with ID:", socket.id);
         socket.emit("create-room", { code: roomCode, settings, host: playerName });
       });
   };

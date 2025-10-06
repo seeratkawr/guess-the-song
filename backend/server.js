@@ -78,6 +78,8 @@ io.on("connection", (socket) => {
   socket.on("join", ({ code, playerName }) => {
     console.log(`${playerName} attempting to join room ${code}`);
 
+    socket.join(code);
+
     const room = rooms.get(code);
 
     if(!room) {
@@ -105,9 +107,6 @@ io.on("connection", (socket) => {
       return;
     }
     
-    // Join the room
-    socket.join(code);
-    
     // Store player info for cleanup
     socket.playerName = playerName;
     socket.roomCode = code;
@@ -125,12 +124,6 @@ io.on("connection", (socket) => {
     
     console.log(`${playerName} joined room ${code}. Players (${room.players.length}/${room.maxPlayers}):`, room.players);
     
-    // Send updated player list to everyone in the room
-    io.to(code).emit("players-updated", { 
-      players: room.players, 
-      maxPlayers: room.maxPlayers 
-    });
-    
     // Also send updated scores if available
     if (room.playerScores && room.playerScores.size > 0) {
       const allScores = Array.from(room.playerScores.values());
@@ -138,12 +131,13 @@ io.on("connection", (socket) => {
     }
     
     // Send success confirmation to the joining player
-    socket.emit("join-success", { 
+    io.to(code).emit("join-success", { 
       roomCode: code, 
       playerName,
       players: room.players,
       maxPlayers: room.maxPlayers,
-      amountOfPlayersInRoom: room.settings.amountOfPlayers // default to 8 if not set,
+      amountOfPlayersInRoom: room.settings.amountOfPlayers, // default to 8 if not set,
+      playerScores: Array.from(room.playerScores.values())
     });
     
     // Send current scores to the new player
@@ -153,17 +147,28 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on('get-room-data', ( code ) => {
+  socket.on('get-room-players-scores', ( code ) => {
+    socket.join(code);
+
     const room = rooms.get(code);
-    socket.emit('room-data', room);
+
+    io.to(code).emit("room-players-scores", Array.from(room.playerScores.values()) || []);
   });
 
-  socket.on('get-room-players', ( code ) => {
+  socket.on('get-total-rounds', ( code ) => {
+    socket.join(code);
+
     const room = rooms.get(code);
-     socket.join(code);
-    
-    io.to(code).emit('room-players', room.players);
-    
+
+    socket.emit("total-rounds", room.settings.rounds);
+  });
+
+
+  socket.on('get-rooms', ( code ) => {
+    socket.join(code);
+
+    io.to(code).emit("rooms", Object.fromEntries(rooms.entries()));
+    // socket.emit("rooms", Object.fromEntries(rooms.entries()));
   });
 
   // Handle score updates from players
@@ -187,9 +192,9 @@ io.on("connection", (socket) => {
 
   // host starts game event
   socket.on("start-game", ({ code }) => {
+    socket.join(code);
     const room = rooms.get(code);
 
-    socket.join(code);
     console.log(`Game started in room ${code}`);
     io.to(code).emit("game-started", room.settings);
   });

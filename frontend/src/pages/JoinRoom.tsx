@@ -23,7 +23,7 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
 
   const handleJoinRoom = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    console.log("JOIN button clicked!", { code, playerName, codeLength: code.length });
+    // console.log("JOIN button clicked!", { code, playerName, codeLength: code.length });
     if (!code.trim()) {
           alert("Please enter a room code!");
           return;
@@ -39,7 +39,7 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
       return;
     }
 
-    console.log("✅ All checks passed! Navigating to waiting room with:", { code, playerName, isHost: false });
+    // console.log("✅ All checks passed! Navigating to waiting room with:", { code, playerName, isHost: false });
     // Navigate to waiting room first, then host will start the game
     navigate(`/waiting/${code}`, { 
       state: { 
@@ -60,7 +60,7 @@ const JoinRoom: React.FC<GuessifyProps> = () => {
 
   useEffect(() => {
     songService.fetchRandomKpop().then((songs) => {
-      console.log("Fetched songs", songs);
+      // console.log("Fetched songs", songs);
     });
   }, []);
 

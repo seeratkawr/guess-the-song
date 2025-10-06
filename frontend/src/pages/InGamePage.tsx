@@ -9,7 +9,7 @@ import RoundScoreDisplay from "../components/RoundScoreDisplay";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { songService } from "../services/songServices";
 import type { Song } from "../types/song";
-import { io, Socket } from "socket.io-client";
+import {socket} from '../socket';
 
 //interface GuessifyProps {}
 interface Player {
@@ -32,9 +32,6 @@ const InGamePage: React.FC = () => {
   const state = location.state 
 
   const { playerName, isHost, rounds: totalRounds, guessTime: roundTime, gameMode } = state;
-
-  // --- Socket setup ---
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   // --- Player State ---
   const [players, setPlayers] = useState<Player[]>([]);
@@ -74,22 +71,16 @@ const InGamePage: React.FC = () => {
 
   /* ----------------- SOCKET CONNECTION ----------------- */
   useEffect(() => {
-    const socketUrl = "http://localhost:8080"; // import.meta.env.VITE_SOCKET_URL || 
-    const newSocket = io(socketUrl);
-    setSocket(newSocket);
 
-    newSocket.on("connect", () => {
+    socket.emit("get-room-players-scores", code );
 
-      newSocket.emit("get-room-players-scores", code );
-
-      // Listen for players joined the room
-      newSocket.on("room-players-scores", ( playerScores ) => {
-        setPlayers(playerScores);
-      });
-    })
+    // Listen for players joined the room
+    socket.on("room-players-scores", ( playerScores ) => {
+      setPlayers(playerScores);
+    });
 
     // Host starts round → everyone gets the same song
-    newSocket.on("round-start", ({ song, choices, answer, startTime }) => {
+    socket.on("round-start", ({ song, choices, answer, startTime }) => {
       setCurrentSong(song);
       setOptions(choices);
       setCorrectAnswer(answer);
@@ -100,27 +91,29 @@ const InGamePage: React.FC = () => {
     });
 
     // Score update - this will override the initial scores when available
-newSocket.on("score-update", (updatedPlayers: Player[]) => {
+    socket.on("score-update", (updatedPlayers: Player[]) => {
   
-  // Only update if we have valid data
-  if (updatedPlayers && Array.isArray(updatedPlayers) && updatedPlayers.length > 0) {
-    // Sort players by points (highest first)
-    const sortedPlayers = [...updatedPlayers].sort((a, b) => b.points - a.points);
-    setPlayers(sortedPlayers);
-    
-    // Update current player state from the players list
-    const currentPlayer = updatedPlayers.find(p => p.name === playerName);
-    if (currentPlayer) {
-      setPlayer(currentPlayer);
-    }
-  } else {
-    console.log("⚠️ WARNING: Received invalid score update data, keeping current players");
-  }
-});
+      // Only update if we have valid data
+      if (updatedPlayers && Array.isArray(updatedPlayers) && updatedPlayers.length > 0) {
+        // Sort players by points (highest first)
+        const sortedPlayers = [...updatedPlayers].sort((a, b) => b.points - a.points);
+        setPlayers(sortedPlayers);
+        
+        // Update current player state from the players list
+        const currentPlayer = updatedPlayers.find(p => p.name === playerName);
+        if (currentPlayer) {
+          setPlayer(currentPlayer);
+        }
+      } else {
+        console.log("⚠️ WARNING: Received invalid score update data, keeping current players");
+      }
+    });
 
-    // return () => {
-    //   newSocket.disconnect();
-    // };
+    return () => {
+      socket.off("room-players-scores");
+      socket.off("round-start");
+      socket.off("score-update");
+    };
   }, [code, playerName]);
 
  /* ----------------- ROUND LOGIC ----------------- */
@@ -210,16 +203,15 @@ newSocket.on("score-update", (updatedPlayers: Player[]) => {
     ));
 
     // Emit score update to server with total points
-// Emit score update to server with total points
-if (socket) {
-  const scoreData = {
-    code,
-    playerName,
-    points: newPoints,
-    correctAnswers: newCorrectAnswers
-  };
-  socket.emit("update-score", scoreData);
-}
+    if (socket) {
+      const scoreData = {
+        code,
+        playerName,
+        points: newPoints,
+        correctAnswers: newCorrectAnswers
+      };
+      socket.emit("update-score", scoreData);
+    }
   };
 
   /* ----------------- HANDLERS ----------------- */
@@ -290,7 +282,7 @@ if (socket) {
     }
   };
 
-
+  
   /* ----------------- EFFECTS ----------------- */ 
 
   // Subscribe to song changes

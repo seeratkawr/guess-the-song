@@ -2,7 +2,7 @@ import '../css/EndGamePage.css';
 import Leaderboard from "../components/Leaderboard";
 import { useLocation, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import { socket } from '../socket';
 
 
 /**
@@ -42,25 +42,26 @@ const EndGamePage: React.FC = () => {
 
     /* ----------------- SOCKET CONNECTION ----------------- */
   useEffect(() => {
-    const socketUrl = "http://localhost:8080"; // import.meta.env.VITE_SOCKET_URL || 
-    const newSocket = io(socketUrl);
+    if (!socket || !socket.connected) return;
 
-    newSocket.on("connect", () => {
 
-      newSocket.emit("get-room-players-scores", code );
-      newSocket.emit("get-total-rounds", code );
+    socket.emit("get-room-players-scores", code );
+    socket.emit("get-total-rounds", code );
 
-      // Listen for players joined the room
-      newSocket.on("room-players-scores", ( playerScores ) => {
-        setPlayers(playerScores);
-      });
-    })
+    // Listen for players joined the room
+    socket.on("room-players-scores", ( playerScores ) => {
+      setPlayers(playerScores);
+    });
 
     // Get total rounds from game settings
-    newSocket.on("total-rounds", (totalRounds: number) => {
+    socket.on("total-rounds", (totalRounds: number) => {
       setTotalRounds(totalRounds);
     });
 
+    return () => {
+      socket.off("room-players-scores");
+      socket.off("total-rounds");
+    };
   }, [ code ]);
 
   return (

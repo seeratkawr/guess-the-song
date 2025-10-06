@@ -173,14 +173,27 @@ io.on("connection", (socket) => {
 
   // Handle score updates from players
   socket.on("update-score", ({ code, playerName, points, correctAnswers }) => {
+  console.log(`🔍 DEBUG Backend received update-score:`, { 
+    code, 
+    playerName, 
+    points, 
+    correctAnswers,
+    pointsType: typeof points,
+    correctAnswersType: typeof correctAnswers
+  });
     const room = rooms.get(code);
-    if (!room || !room.playerScores) return;
+    if (!room || !room.playerScores){
+          console.log(`❌ DEBUG: Room not found or no playerScores for code: ${code}`);
+    return;
+  }
 
     const playerScore = room.playerScores.get(playerName);
     if (playerScore) {
       playerScore.previousPoints = playerScore.points;
       playerScore.points = points;
       playerScore.correctAnswers = correctAnswers;
+
+      console.log(`🔍 DEBUG: After update - playerScore:`, playerScore);
       
       console.log(`Score updated for ${playerName}: ${points} points, ${correctAnswers} correct`);
       

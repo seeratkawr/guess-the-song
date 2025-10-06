@@ -58,7 +58,6 @@ const EndGamePage: React.FC = () => {
 
     // Get total rounds from game settings
     newSocket.on("total-rounds", (totalRounds: number) => {
-      console.log("Total rounds received:", totalRounds);
       setTotalRounds(totalRounds);
     });
 

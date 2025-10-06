@@ -84,7 +84,6 @@ const InGamePage: React.FC = () => {
 
       // Listen for players joined the room
       newSocket.on("room-players-scores", ( playerScores ) => {
-        console.log("Here Players with Scores:", playerScores);
         setPlayers(playerScores);
       });
     })
@@ -101,18 +100,23 @@ const InGamePage: React.FC = () => {
     });
 
     // Score update - this will override the initial scores when available
-    newSocket.on("score-update", (updatedPlayers: Player[]) => {
-      console.log("Score update received:", updatedPlayers);
-      // Sort players by points (highest first)
-      const sortedPlayers = [...updatedPlayers].sort((a, b) => b.points - a.points);
-      setPlayers(sortedPlayers);
-      
-      // Update current player state from the players list
-      const currentPlayer = updatedPlayers.find(p => p.name === playerName);
-      if (currentPlayer) {
-        setPlayer(currentPlayer);
-      }
-    });
+newSocket.on("score-update", (updatedPlayers: Player[]) => {
+  
+  // Only update if we have valid data
+  if (updatedPlayers && Array.isArray(updatedPlayers) && updatedPlayers.length > 0) {
+    // Sort players by points (highest first)
+    const sortedPlayers = [...updatedPlayers].sort((a, b) => b.points - a.points);
+    setPlayers(sortedPlayers);
+    
+    // Update current player state from the players list
+    const currentPlayer = updatedPlayers.find(p => p.name === playerName);
+    if (currentPlayer) {
+      setPlayer(currentPlayer);
+    }
+  } else {
+    console.log("⚠️ WARNING: Received invalid score update data, keeping current players");
+  }
+});
 
     // return () => {
     //   newSocket.disconnect();
@@ -171,11 +175,12 @@ const InGamePage: React.FC = () => {
   // Calculate points based on how quickly the answer was given (min 100, max 1000)
   const calculatePoints = (): number => {
     if (!roundStartTime) return 500; // fallback if no start time
+    const roundTimeAsNumber = getTimeAsNumber(roundTime);
     
     const maxPoints = 1000;
     const minPoints = 100;
     const elapsedTime = (Date.now() - roundStartTime) / 1000; // seconds
-    const timeRatio = Math.max(0, (roundTime - elapsedTime) / roundTime);
+    const timeRatio = Math.max(0, (roundTimeAsNumber - elapsedTime) / roundTimeAsNumber);
     const points = Math.floor(minPoints + (maxPoints - minPoints) * timeRatio);
     return Math.max(points, minPoints);
   };
@@ -205,14 +210,16 @@ const InGamePage: React.FC = () => {
     ));
 
     // Emit score update to server with total points
-    if (socket) {
-      socket.emit("update-score", {
-        code,
-        playerName,
-        points: newPoints,
-        correctAnswers: newCorrectAnswers
-      });
-    }
+// Emit score update to server with total points
+if (socket) {
+  const scoreData = {
+    code,
+    playerName,
+    points: newPoints,
+    correctAnswers: newCorrectAnswers
+  };
+  socket.emit("update-score", scoreData);
+}
   };
 
   /* ----------------- HANDLERS ----------------- */
@@ -269,7 +276,6 @@ const InGamePage: React.FC = () => {
 
   // Continue to next round or navigate to end game screen
   const handleContinueToNextRound = () => {
-    console.log('currentRound:', currentRound, 'totalRounds:', totalRounds);
     if (currentRound < totalRounds) {
       setCurrentRound(r => r + 1);
       setTimeLeft(getTimeAsNumber(roundTime));

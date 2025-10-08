@@ -4,8 +4,13 @@
 export const generateRoomCode = (): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
+  
+  // Use crypto.getRandomValues for better randomness
+  const randomArray = new Uint8Array(6);
+  crypto.getRandomValues(randomArray);
+  
   for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(randomArray[i] % chars.length);
   }
   return result;
 };

@@ -45,7 +45,11 @@ const SettingsPage = () => {
     const handleCreateRoom = () => {
 
       // create socket
-      const socketUrl = "http://localhost:8080";
+      const socketUrl = import.meta.env.VITE_SOCKET_URL;
+      if (!socketUrl) {
+        alert("Socket URL is not defined. Please check your environment variables.");
+        return;
+      }
       const socket = io(socketUrl);
 
       socket.on("room-created", ({ code, rooms }) => {

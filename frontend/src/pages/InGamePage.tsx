@@ -67,7 +67,7 @@ const InGamePage: React.FC = () => {
 
   // --- Round Control Helpers ---
   const isRoundStarting = useRef(false);
-  const roundTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  //const roundTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ----------------- SOCKET CONNECTION ----------------- */
   useEffect(() => {
@@ -142,16 +142,10 @@ const InGamePage: React.FC = () => {
 
  /* ----------------- ROUND LOGIC ----------------- */
   useEffect(() => {
-    if (isRoundActive && timeLeft > 0) {
-      roundTimer.current = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
-    }
     if (timeLeft === 0) {
       setIsRoundActive(false);
       socket?.emit("round-end", { code });
     }
-    return () => {
-      if (roundTimer.current) clearTimeout(roundTimer.current);
-    };
   }, [isRoundActive, timeLeft, socket, code]);
 
   /* ----------------- HELPER FUNCTIONS ----------------- */
@@ -384,17 +378,22 @@ const handleContinueToNextRound = () => {
 
   // Countdown timer logic
   useEffect(() => {
-    if (!isRoundActive || isIntermission) return;
+  // Don't run timer during intermission or when round is not active
+  if (!isRoundActive || isIntermission) return;
 
-    if (timeLeft <= 0) {
-      handleRoundEnd();
-      return;
-    }
+  if (timeLeft <= 0) {
+    // Time ran out - handle round end
+    handleRoundEnd();
+    setIsRoundActive(false);
+    socket?.emit("round-end", { code });
+    return;
+  }
 
-    const timer = setTimeout(() => setTimeLeft((t: number) => t - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, isRoundActive, isIntermission]);
-
+  // Single timer that decrements every second
+  const timer = setTimeout(() => setTimeLeft((t: number) => t - 1), 1000);
+  
+  return () => clearTimeout(timer);
+}, [timeLeft, isRoundActive, isIntermission, socket, code]);
 
   /* ----------------- RENDER ----------------- */
 

@@ -38,7 +38,7 @@ const SettingsPage = () => {
       <div className="settings-page-background">
         {/* Header with back button, logo, and invite code */}
         <div className="settings-header">
-          <button className="back-button" onClick={handleBackClick}>
+          <button className="joinroom-back-button" onClick={handleBackClick}>
             <span className="back-arrow">&lt;&lt;</span>
             <span className="back-text">Back</span>
           </button>

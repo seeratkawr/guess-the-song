@@ -23,6 +23,10 @@ const getTimeAsNumber = (timeStr: string): number => {
   return parseInt(timeStr.replace(' sec', ''));
 };
 
+type Genre = "kpop" | "pop" | "hiphop" | "edm";
+
+interface GuessifyProps {}
+
 const InGamePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,8 +34,8 @@ const InGamePage: React.FC = () => {
 
   // --- Extract settings safely ---
   const state = location.state 
+  const { playerName, isHost, rounds: totalRounds, guessTime: roundTime, gameMode, genre: Genre} = state;
 
-  const { playerName, isHost, rounds: totalRounds, guessTime: roundTime, gameMode } = state;
 
   // --- Player State ---
   const [players, setPlayers] = useState<Player[]>([]);
@@ -149,6 +153,12 @@ const InGamePage: React.FC = () => {
   }, [isRoundActive, timeLeft, socket, code]);
 
   /* ----------------- HELPER FUNCTIONS ----------------- */
+
+  const genre = (location.state?.genre ?? "kpop") as "kpop"|"pop"|"hiphop"|"edm";
+
+  useEffect(() => {
+    songService.fetchRandom(genre, 50).catch(console.error);
+  }, [genre]);
 
   // Get a random set of songs for multiple choice rounds
   const getRandomSongs = (num: number): Song[] => {

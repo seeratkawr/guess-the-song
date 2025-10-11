@@ -108,14 +108,14 @@ _A real-time multiplayer music guessing game built with Deezer_
    
    Your URL will be: `http://YOUR_IP_ADDRESS:8080`
 
-5. **Start the backend server**
+5. **Start the Backend server**
 
    ```bash
    cd backend
    npm run dev
    ```
 
-6. **Start the frontend (in another terminal)**
+6. **Start the Frontend (in another terminal)**
 
      For MacOs users:
       ```bash
@@ -137,7 +137,7 @@ _A real-time multiplayer music guessing game built with Deezer_
      echo $VITE_SOCKET_URL
      ```
    
-     In your front end terminal you should see the appropriate links eg.
+     In your Frontend terminal you should see the appropriate links eg.
      ```bash
      ➜  Local:   http://localhost:5173/
      ➜  Network: http://172.23.38.47:5173/

@@ -194,7 +194,7 @@ const InGamePage: React.FC = () => {
   socket.on("navigate-to-end-game", () => {
     console.log("Host ended the game, navigating all players to end game page");
     navigate("/end_game", {
-      state: { code }
+      state: { ...location.state, code }
     });
   });
 
@@ -541,7 +541,7 @@ const handleContinueToNextRound = () => {
   } else {
     // Navigate to end game page
     navigate("/end_game", {
-      state: { code }
+      state: { ...location.state, code }
     });
   }
 };

@@ -58,9 +58,9 @@ const InGamePage: React.FC = () => {
   const isSingleSong = state?.gameMode === "Single Song";
   const isMixedSongs = state?.gameMode === "Mixed Songs";  
   const isGuessArtist = state?.gameMode === "Guess the Artist";
-  const isQuickGuess1Sec = state?.gameMode === "Quick Guess - 1 Sec";
-  const isQuickGuess3Sec = state?.gameMode === "Quick Guess - 3 Sec";
-  const isQuickGuess5Sec = state?.gameMode === "Quick Guess - 5 Sec";
+  const isQuickGuess1Sec = state?.gameMode === "Quick Guess - 1s";
+  const isQuickGuess3Sec = state?.gameMode === "Quick Guess - 3s";
+  const isQuickGuess5Sec = state?.gameMode === "Quick Guess - 5s";
   const isQuickGuess = isQuickGuess1Sec || isQuickGuess3Sec || isQuickGuess5Sec;
 
   // Get the snipper duration for quick guess modes
@@ -198,12 +198,30 @@ const InGamePage: React.FC = () => {
     });
   });
 
+  socket.on("host-skipped-round", () => {
+    console.log("Host skipped the round for everyone");
+    songService.stopSong();
+    
+    // Set all the necessary states to show leaderboard
+    setIsRoundActive(false);
+    setIsIntermission(true);
+    setIsTimeUp(true);
+    setShowCorrectAnswer(true);
+    
+    // Reset guess states to ensure clean leaderboard display
+    setHasGuessedCorrectly(false);
+    setHasSelectedCorrectly(false);
+    setHasGuessedArtistCorrectly(false);
+    setSelectedIndex(null);
+  });
+
     return () => {
       socket.off("room-players-scores");
       socket.off("round-start");
       socket.off("score-update");
       socket.off("continue-to-next-round");
       socket.off("navigate-to-end-game");
+      socket.off("host-skipped-round"); 
     };
   }, [code, playerName, navigate, roundTime]);
 
@@ -442,10 +460,21 @@ const InGamePage: React.FC = () => {
   // Handle skip in single song mode
   const handleSkip = () => {
     if (!hasGuessedCorrectly) {
-      // Stop the song and go to round score display without points
-      songService.stopSong();
-      setIsRoundActive(false);
-      setIsIntermission(true);
+      const isSinglePlayer = state?.amountOfPlayers === 1;
+      
+      if (isSinglePlayer) {
+        // Single player: skip locally
+        songService.stopSong();
+        setIsRoundActive(false);
+        setIsIntermission(true);
+      } else if (isHost) {
+        // Multiplayer host: skip for everyone
+        socket?.emit("host-skip-round", { code });
+        // Also skip locally for the host
+        songService.stopSong();
+        setIsRoundActive(false);
+        setIsIntermission(true);
+      }
     }
   };
 
@@ -610,6 +639,7 @@ const handleContinueToNextRound = () => {
           currentSong={currentSong}
           hasGuessedCorrectly={hasGuessedCorrectly}
           onSkip={handleSkip}
+          isHost={isHost}  // Add this line
           onWrongGuess={() => {
             // Optional: Add any logic for wrong guesses
           }}
@@ -638,9 +668,7 @@ const handleContinueToNextRound = () => {
           currentSong={currentSong}
           hasGuessedCorrectly={hasGuessedArtistCorrectly}
           onSkip={handleSkip}
-          onWrongGuess={() => {
-            // Optional: Add any logic for wrong guesses
-          }}
+          isHost={isHost}
         />
       );
     }
@@ -656,6 +684,7 @@ const handleContinueToNextRound = () => {
           hasPlayedSnippet={hasPlayedSnippet}
           snippetDuration={getSnippetDuration()}
           onSkip={handleSkip}
+          isHost={isHost} 
         />
       );
     }

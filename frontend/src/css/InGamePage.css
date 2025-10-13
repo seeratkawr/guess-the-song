@@ -14,7 +14,7 @@ html {
   height: 100%;
 }
 
-.in-game-container {
+.game-2-container {
   width: 100vw;
   min-height: 100vh;
   display: flex;
@@ -50,7 +50,7 @@ html {
 }
 
 .song-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -96,6 +96,6 @@ html {
 }
 
 .answer-btn.selected {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
 }

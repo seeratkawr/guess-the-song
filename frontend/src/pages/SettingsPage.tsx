@@ -2,6 +2,7 @@ import Settings from "../components/Settings";
 import "../css/SettingsPage.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
+import CopyButton from "../components/CopyButton";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -25,8 +26,7 @@ const SettingsPage = () => {
   };
 
   // Placeholder for invite code logic (copy/share)
-  const handleGameCodeClick = () => {
-  };
+  const handleGameCodeClick = () => {};
 
   // Create room and move to game page, passing player info and settings
   const handleCreateRoom = () => {
@@ -34,28 +34,23 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="settings-page">
-      <div className="settings-page-background">
-        {/* Header with back button, logo, and invite code */}
-        <div className="settings-header">
-          <button className="joinroom-back-button" onClick={handleBackClick}>
-            <span className="back-arrow">&lt;&lt;</span>
-            <span className="back-text">Back</span>
-          </button>
+    <div className="settings-page-container">
+      <div className="gradient">
+        <button className="joinroom-back-button" onClick={handleBackClick}>
+          <span className="back-arrow">&lt;&lt;</span>
+          <span className="back-text">Back</span>
+        </button>
 
-          <div className="logo">
-            <span className="logo-text">Guessify</span>
-          </div>
+        <h1 className="settings-page-title">Guessify</h1>
 
-          <div className="game-code-section">
-            <span className="invite-text">INVITE CODE:</span>
-            <button className="game-code-button" onClick={handleGameCodeClick}>
-              <span className="code-text">ABC123</span>
-              <span className="copy-icon">📋</span>
-            </button>
-          </div>
+        <div className="room-code-section">
+          <h2>Invite Code: {code}</h2>
+          <CopyButton textToCopy={code || ""} />
         </div>
+      </div>
 
+      {/* Settings content */}
+      <div className="settings-content">
         {/* Game settings form */}
         <Settings settings={settings} setSettings={setSettings} />
 

@@ -1,42 +1,63 @@
-/* SettingsPage.css */
-
-.settings-page {
-  width: 100vw;
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
-
-.settings-page-background {
-  width: 100%;
-  min-height: 100vh;
+/* Main container with background */
+.settings-page-container {
   background-image: url(../assets/Background.png);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background-attachment: fixed;
+  color: black;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-/* Header Styles */
-.settings-header {
+.gradient {
+  height: 15vh;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 55%,
+    rgba(55, 3, 133, 0.1) 60%,
+    #280162 100%
+  );
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 4rem 3rem 2rem 3rem;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 2.5rem 4rem;
   position: relative;
-  z-index: 10;
+}
+
+.room-code-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.room-code-section h2 {
+  margin: 0;
+  color: white;
+}
+
+/* Main title */
+.settings-page-title {
+  font-weight: bold;
+  color: white;
+  margin: 0;
+  line-height: inherit;
+  letter-spacing: -0.025em;
+  font-size: 3rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Back Button */
 .joinroom-back-button {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.9);
@@ -50,6 +71,7 @@
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   z-index: 10;
+  align-self: center;
 }
 
 .joinroom-back-button:hover {
@@ -67,64 +89,37 @@
   font-size: 0.9rem;
 }
 
-/* Logo */
-.logo {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.logo-text {
-  font-size: 3rem;
-  font-weight: 800;
-  color: white;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  letter-spacing: -0.02em;
-}
-
-/* Game Code Section */
-.game-code-section {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.invite-text {
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
 .game-code-button {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: none;
   border: none;
-  border-radius: 15px;
-  padding: 0.6rem 1rem;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
+  padding: 5px;
+  border-radius: 5px;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  gap: 0.5rem;
+  position: relative;
+  outline: none;
 }
 
 .game-code-button:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.code-text {
-  letter-spacing: 0.1em;
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
 }
 
 .copy-icon {
-  font-size: 0.9rem;
+  font-size: 1.5rem;
+}
+
+/* Settings Content */
+.settings-content {
+  text-align: center;
+  width: 100%;
+  height: auto;
+  min-height: calc(100vh - 18vh);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+  padding: 2rem 1.5rem 1rem 1.5rem;
 }
 
 /* Settings Component Container */
@@ -134,7 +129,7 @@
   padding: 2rem;
   width: 100%;
   max-width: 600px;
-  margin: 2rem 0;
+  margin: 2rem auto;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
@@ -150,7 +145,7 @@
 }
 
 .create-room-button {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
+  background: linear-gradient(135deg, #4caf50, #45a049);
   color: white;
   border: none;
   border-radius: 25px;
@@ -179,28 +174,17 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .settings-header {
-    padding: 3rem 2rem 1.5rem 2rem;
-    flex-direction: row;
-    justify-content: space-between;
+  .gradient {
+    padding: 2rem;
   }
 
-  .logo-text {
-    font-size: 2.2rem;
+  .settings-page-title {
+    font-size: 2.5rem;
   }
 
-  .back-button {
+  .joinroom-back-button {
     padding: 0.6rem 1.2rem;
     font-size: 1rem;
-  }
-
-  .invite-text {
-    font-size: 0.9rem;
-  }
-
-  .game-code-button {
-    padding: 0.5rem 0.8rem;
-    font-size: 0.9rem;
   }
 
   .settings-container {
@@ -216,37 +200,8 @@
 }
 
 @media (max-width: 480px) {
-  .settings-header {
-    padding: 2rem 1.5rem 1rem 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .logo {
-    position: static;
-    transform: none;
-    order: -1;
-    width: 100%;
-    text-align: center;
-  }
-
-  .logo-text {
+  .settings-page-title {
     font-size: 2rem;
-  }
-
-  .back-button {
-    flex: 1;
-    justify-content: center;
-    min-width: 80px;
-  }
-
-  .game-code-section {
-    flex: 1;
-    justify-content: flex-end;
-  }
-
-  .invite-text {
-    display: none;
   }
 
   .settings-container {

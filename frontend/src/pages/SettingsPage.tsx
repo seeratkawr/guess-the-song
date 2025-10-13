@@ -48,13 +48,6 @@ const SettingsPage = () => {
       await navigator.clipboard.writeText(roomCode);
     } catch (err) {
       console.error("Failed to copy room code: ", err);
-
-      const textArea = document.createElement("textarea");
-      textArea.value = roomCode;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
     }
   };
 

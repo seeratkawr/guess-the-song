@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { socket } from "../socket";
-import CopyButton from "../components/CopyButton";
 import "../css/WaitingRoom.css";
 
 const WaitingRoom: React.FC = () => {

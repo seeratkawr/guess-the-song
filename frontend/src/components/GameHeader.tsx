@@ -9,11 +9,13 @@ import copyAndPasteIcon from "../assets/copy-and-paste.png";
  * @property {string} roundNumber - Current round number (e.g., "1/10")
  * @property {string} timer - Current timer value to display
  * @property {string} inviteCode - Room invite code for players to join
+ * @property {boolean} [showInvite=true] -  flag to show/hide invite code section
  */
 interface GameHeaderProps {
   roundNumber: string;
   timer: string;
   inviteCode: string;
+  showInvite?: boolean; 
 }
 
 /**
@@ -65,7 +67,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             <span className="copy-icon">📋</span>
           </button>
         </div>
-      </div>
+      )}
     </header>
   );
 };

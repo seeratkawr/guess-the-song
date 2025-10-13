@@ -34,6 +34,7 @@
 
 /* Back Button */
 .joinroom-back-button {
+  /* inherits everything from .back-button */
   position: absolute;
   top: 1rem;
   left: 1rem;
@@ -87,6 +88,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-left: auto;
 }
 
 .invite-text {
@@ -150,7 +152,7 @@
 }
 
 .create-room-button {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
+  background: linear-gradient(135deg, #4caf50, #45a049);
   color: white;
   border: none;
   border-radius: 25px;

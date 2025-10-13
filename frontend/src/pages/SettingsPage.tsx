@@ -3,11 +3,15 @@ import "../css/SettingsPage.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { generateRoomCode } from "../utils/roomCode.tsx";
-import { type GameSettings, PlayerCount, RoundsCount } from "../components/Settings";
-import { socket } from '../socket';
+import {
+  type GameSettings,
+  PlayerCount,
+  RoundsCount,
+} from "../components/Settings";
+import { socket } from "../socket";
 
 const GENRES = ["kpop", "pop", "hiphop", "edm"] as const;
-type Genre = typeof GENRES[number];
+type Genre = (typeof GENRES)[number];
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -23,15 +27,14 @@ const SettingsPage = () => {
     setRoomCode(code);
   }, []);
 
-
   // Game settings state (default values)
   const [settings, setSettings] = useState<GameSettings>({
-    amountOfPlayers: PlayerCount['Single Player'],
+    amountOfPlayers: PlayerCount["Single Player"],
     guessType: "Guess Song",
     gameMode: "Single Song",
     rounds: RoundsCount["10 Rounds"],
     guessTime: "15 sec",
-    genre: "kpop" as Genre, 
+    genre: "kpop" as Genre,
   });
 
   // Navigate back to lobby
@@ -40,59 +43,88 @@ const SettingsPage = () => {
   };
 
   // Placeholder for invite code logic (copy/share)
-  const handleGameCodeClick = () => {
+  const handleGameCodeClick = async () => {
+    try {
+      await navigator.clipboard.writeText(roomCode);
+    } catch (err) {
+      console.error("Failed to copy room code: ", err);
+
+      const textArea = document.createElement("textarea");
+      textArea.value = roomCode;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    }
   };
 
   // Create room and move to game page, passing player info and settings
-    const handleCreateRoom = () => {
+  const handleCreateRoom = () => {
+    // Set up room creation listener
+    const handleRoomCreated = ({
+      code,
+      rooms,
+    }: {
+      code: string;
+      rooms: any;
+    }) => {
+      console.log(
+        "Room created successfully with code:",
+        code,
+        "in ROOMS:",
+        rooms
+      );
 
-      // Set up room creation listener
-      const handleRoomCreated = ({ code, rooms }: { code: string; rooms: any }) => {
-        console.log("Room created successfully with code:", code, 'in ROOMS:', rooms);
-        
-        // For single player mode, skip waiting room and go directly to game
-        if (settings.amountOfPlayers === 1) {
-          navigate(`/room/${code}`, {
-            state: {
-              ...settings,
-              playerName,
-              isHost: true,
-            }
-          });
-        } else {
-          navigate(`/waiting/${code}`, {
-            state: {
-              playerName,
-              isHost: true, // Mark this player as the host
-            }
-          });
-        }
-        
-        // Clean up listener after navigation
-        socket.off("room-created", handleRoomCreated);
-      };
-
-      socket.on("room-created", handleRoomCreated);
-
-      // Create the room
-      if (socket.connected) {
-        socket.emit("create-room", { code: roomCode, settings, host: playerName });
+      // For single player mode, skip waiting room and go directly to game
+      if (settings.amountOfPlayers === 1) {
+        navigate(`/room/${code}`, {
+          state: {
+            ...settings,
+            playerName,
+            isHost: true,
+          },
+        });
       } else {
-        // If not connected, wait for connection then emit
-        socket.on("connect", () => {
-          console.log("🔌 Connected to server with ID:", socket.id);
-          socket.emit("create-room", { code: roomCode, settings, host: playerName });
+        navigate(`/waiting/${code}`, {
+          state: {
+            playerName,
+            isHost: true, // Mark this player as the host
+          },
         });
       }
-  };
 
+      // Clean up listener after navigation
+      socket.off("room-created", handleRoomCreated);
+    };
+
+    socket.on("room-created", handleRoomCreated);
+
+    // Create the room
+    if (socket.connected) {
+      socket.emit("create-room", {
+        code: roomCode,
+        settings,
+        host: playerName,
+      });
+    } else {
+      // If not connected, wait for connection then emit
+      socket.on("connect", () => {
+        console.log("🔌 Connected to server with ID:", socket.id);
+        socket.emit("create-room", {
+          code: roomCode,
+          settings,
+          host: playerName,
+        });
+      });
+    }
+  };
 
   return (
     <div className="settings-page">
       <div className="settings-page-background">
         {/* Header with back button, logo, and invite code */}
         <div className="settings-header">
-          <button className="back-button" onClick={handleBackClick}>
+          <button className="joinroom-back-button" onClick={handleBackClick}>
             <span className="back-arrow">&lt;&lt;</span>
             <span className="back-text">Back</span>
           </button>
@@ -114,7 +146,7 @@ const SettingsPage = () => {
         <Settings settings={settings} setSettings={setSettings} />
 
         {/* Button to confirm settings and start game */}
-              <div className="create-room-section">
+        <div className="create-room-section">
           <button className="create-room-button" onClick={handleCreateRoom}>
             Create Room
           </button>

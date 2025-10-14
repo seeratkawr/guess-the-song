@@ -248,24 +248,60 @@ body, html {
   animation: fadeInPodiumBronze 0.8s ease-in-out 0s forwards;
 }
 
+/* podium nickname area now contains avatar above the name */
 .nickname {
-    font-size: 2rem;
-    margin-bottom: 0;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0); /* name fades in via animation */
 }
 
-.column:nth-child(1) .nickname {
+/* hide entire avatar (including background color) until reveal */
+.podium-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* Avatar image sizing - image fills most of its circular container */
+.podium-avatar img {
+  display: block;
+  border-radius: 50%;
+  width: 80%;
+  height: 80%;
+  object-fit: cover;
+}
+
+/* Size containers per podium position and animate reveal together with the name */
+.column:nth-child(1) .podium-avatar { /* second place */
+  width: 64px;
+  height: 64px;
   animation: fadeInNickname 0.8s ease-in-out 1s forwards;
 }
 
-.column:nth-child(2) .nickname {
+.column:nth-child(2) .podium-avatar { /* first place */
+  width: 96px;
+  height: 96px;
   animation: fadeInNickname 0.8s ease-in-out 2s forwards;
 }
 
-.column:nth-child(3) .nickname {
+.column:nth-child(3) .podium-avatar { /* third place */
+  width: 56px;
+  height: 56px;
   animation: fadeInNickname 0.8s ease-in-out 0s forwards;
 }
+
+/* Keep name reveal timings in sync with avatar */
+.column:nth-child(1) .nickname { animation: fadeInNickname 0.8s ease-in-out 1s forwards; }
+.column:nth-child(2) .nickname { animation: fadeInNickname 0.8s ease-in-out 2s forwards; }
+.column:nth-child(3) .nickname { animation: fadeInNickname 0.8s ease-in-out 0s forwards; }
 
 .ground {
   background-color: #ffffff;
@@ -329,9 +365,13 @@ body, html {
 @keyframes fadeInNickname {
   from {
     color: rgba(255, 255, 255, 0);
+    opacity: 0;
+    transform: translateY(6px);
   }
   to {
     color: #ffffff;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

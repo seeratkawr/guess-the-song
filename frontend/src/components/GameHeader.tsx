@@ -64,7 +64,13 @@ const GameHeader: React.FC<GameHeaderProps> = ({
           <span className="invite-text">INVITE CODE:</span>
           <button className="game-code-button" onClick={handleCopy}>
             <span className="code-text">{inviteCode}</span>
-            <span className="copy-icon">📋</span>
+            <span className="copy-icon">
+              <img
+                src="/src/assets/copy-symbol.svg"
+                alt="Copy Icon"
+                className="copy-icon-img"
+              />
+            </span>
           </button>
         </div>
       </div>

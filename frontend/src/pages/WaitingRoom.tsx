@@ -32,13 +32,16 @@ const WaitingRoom: React.FC = () => {
 
     socket.on("join-error", ({ message }) => {
       alert(message);
-      navigate('/lobby', { state: { playerName } });
+      navigate("/lobby", { state: { playerName } });
     });
 
-    socket.on("join-success", ({ players: roomPlayers, amountOfPlayersInRoom }) => {
-      setPlayers(roomPlayers);
-      setAmountOfPlayersInRoom(amountOfPlayersInRoom);
-    });
+    socket.on(
+      "join-success",
+      ({ players: roomPlayers, amountOfPlayersInRoom }) => {
+        setPlayers(roomPlayers);
+        setAmountOfPlayersInRoom(amountOfPlayersInRoom);
+      }
+    );
 
     // Add this handler for joining active games
     socket.on("join-active-game", (gameSettings) => {
@@ -53,13 +56,13 @@ const WaitingRoom: React.FC = () => {
           state: {
             ...gameSettings,
             playerName,
-            isHost: false
-          }
+            isHost: false,
+          },
         });
       }
     });
 
-    socket.on("game-started", (settings) => {  
+    socket.on("game-started", (settings) => {
       navigate(`/room/${code}`, {
         state: {
           ...settings,
@@ -72,24 +75,24 @@ const WaitingRoom: React.FC = () => {
     // If host starts a round while this client is waiting, navigate into the round
     socket.on("round-start", (roundData) => {
       const settings = activeGameInfoRef.current || {};
-     // Prefer an explicit round number from the round payload, otherwise fall back to stored settings
-     const roundNumber =
-       roundData?.roundNumber ??
-       roundData?.currentRound ??
-       settings?.currentRound ??
-       settings?.roundNumber ??
-       1;
+      // Prefer an explicit round number from the round payload, otherwise fall back to stored settings
+      const roundNumber =
+        roundData?.roundNumber ??
+        roundData?.currentRound ??
+        settings?.currentRound ??
+        settings?.roundNumber ??
+        1;
       navigate(`/room/${code}`, {
         state: {
           ...settings,
           ...roundData,
           currentRound: roundNumber,
           playerName,
-          isHost: false
-        }
+          isHost: false,
+        },
       });
     });
-    
+
     // If host continues to next round, also navigate waiting players in
     socket.on("continue-to-next-round", ({ nextRound }) => {
       const settings = activeGameInfoRef.current || {};
@@ -98,18 +101,18 @@ const WaitingRoom: React.FC = () => {
           ...settings,
           playerName,
           isHost: false,
-          nextRound
-        }
+          nextRound,
+        },
       });
     });
 
     return () => {
-      socket.off('join-error');
-      socket.off('join-success');
-      socket.off('join-active-game'); 
-      socket.off('game-started');
-      socket.off('round-start');
-      socket.off('continue-to-next-round');
+      socket.off("join-error");
+      socket.off("join-success");
+      socket.off("join-active-game");
+      socket.off("game-started");
+      socket.off("round-start");
+      socket.off("continue-to-next-round");
     };
   }, [code, playerName, navigate]);
 
@@ -138,21 +141,36 @@ const WaitingRoom: React.FC = () => {
           <span className="invite-text">INVITE CODE:</span>
           <button className="game-code-button" onClick={handleGameCodeClick}>
             <span className="code-text">{code || "..."}</span>
-            <span className="copy-icon">📋</span>
+            <span className="copy-icon">
+              <img
+                src="/src/assets/copy-symbol.svg"
+                alt="Copy Icon"
+                className="copy-icon-img"
+              />
+            </span>
           </button>
         </div>
       </div>
       <div className="waiting-room-content">
-
         {activeGameInfo && (
           <div className="active-game-banner">
-            <p>Game in progress. Please wait for the host to finish the round.</p>
+            <p>
+              Game in progress. Please wait for the host to finish the round.
+            </p>
             <p>Current Round: {activeGameInfo.currentRound ?? "?"}</p>
           </div>
         )}
 
-        <div className={`players-list-section ${amountOfPlayersInRoom === 1 ? 'single-player-mode' : ''}`}>
-          <h2>{amountOfPlayersInRoom === 1 ? 'Single Player Mode' : `Players in Room - ${players.length} of ${amountOfPlayersInRoom}`}</h2>
+        <div
+          className={`players-list-section ${
+            amountOfPlayersInRoom === 1 ? "single-player-mode" : ""
+          }`}
+        >
+          <h2>
+            {amountOfPlayersInRoom === 1
+              ? "Single Player Mode"
+              : `Players in Room - ${players.length} of ${amountOfPlayersInRoom}`}
+          </h2>
           {amountOfPlayersInRoom === 1 ? (
             <div className="single-player">
               <div

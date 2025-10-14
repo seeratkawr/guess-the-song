@@ -77,6 +77,11 @@
   font-size: 0.9rem;
 }
 
+.copy-icon-img {
+  width: 25px;
+  fill: black;
+  stroke: black;
+}
 /* Content wrapper */
 .waiting-room-content {
   text-align: center;

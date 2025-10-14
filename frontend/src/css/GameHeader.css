@@ -147,3 +147,9 @@
 .copy-and-paste-icon:hover {
   opacity: 0.7;
 }
+
+.copy-icon-img {
+  width: 25px;
+  fill: black;
+  stroke: black;
+}

@@ -115,7 +115,7 @@ const SettingsPage = () => {
   return (
     <div className="settings-page">
       <div className="settings-page-background">
-        {/* Header with back button, logo, and invite code */}
+        {/* Header with back button and logo */}
         <div className="settings-header">
           <button className="joinroom-back-button" onClick={handleBackClick}>
             <span className="back-arrow">&lt;&lt;</span>
@@ -127,14 +127,17 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Game settings form */}
-        <Settings settings={settings} setSettings={setSettings} />
+        {/* Main content wrapper for centering */}
+        <div className="settings-main-content">
+          {/* Game settings form */}
+          <Settings settings={settings} setSettings={setSettings} />
 
-        {/* Button to confirm settings and start game */}
-        <div className="create-room-section">
-          <button className="create-room-button" onClick={handleCreateRoom}>
-            Create Room
-          </button>
+          {/* Button to confirm settings and start game */}
+          <div className="create-room-section">
+            <button className="create-room-button" onClick={handleCreateRoom}>
+              Create Room
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@ interface GameHeaderProps {
   roundNumber: string;
   timer: string;
   inviteCode: string;
-  showInvite?: boolean; 
+  showInvite?: boolean;
 }
 
 /**
@@ -67,7 +67,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             <span className="copy-icon">📋</span>
           </button>
         </div>
-      )}
+      </div>
     </header>
   );
 };

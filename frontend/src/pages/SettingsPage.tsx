@@ -118,8 +118,8 @@ const SettingsPage = () => {
         {/* Header with back button and logo */}
         <div className="settings-header">
           <button className="joinroom-back-button" onClick={handleBackClick}>
-            <span className="back-arrow">&lt;&lt;</span>
-            <span className="back-text">Back</span>
+            <span className="joinroom-back-arrow">&lt;&lt;</span>
+            <span className="join-room-back-text">Back</span>
           </button>
 
           <div className="logo">

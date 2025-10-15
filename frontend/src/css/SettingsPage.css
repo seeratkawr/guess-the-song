@@ -37,6 +37,7 @@
 
 /* Back Button */
 .joinroom-back-button {
+  /* inherits everything from .back-button */
   position: absolute;
   top: 1rem;
   left: 1rem;

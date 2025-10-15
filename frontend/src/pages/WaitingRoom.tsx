@@ -135,20 +135,29 @@ const WaitingRoom: React.FC = () => {
 
   return (
     <div className="waiting-room-container">
-      <div className="gradient">
-        <h1 className="waiting-room-title">Waiting Room</h1>
-        <div className="game-code-section">
-          <span className="invite-text">INVITE CODE:</span>
-          <button className="game-code-button" onClick={handleGameCodeClick}>
-            <span className="code-text">{code || "..."}</span>
-            <span className="copy-icon">
-              <img
-                src="/src/assets/copy-symbol.svg"
-                alt="Copy Icon"
-                className="copy-icon-img"
-              />
-            </span>
-          </button>
+      <div className="header-section">
+        <div className="header-left">
+          <div className="waiting-room-label">WAITING ROOM</div>
+        </div>
+
+        <div className="header-center">
+          <h1 className="title">Guessify</h1>
+        </div>
+
+        <div className="header-right">
+          <div className="game-code-section">
+            <span className="invite-text">INVITE CODE:</span>
+            <button className="game-code-button" onClick={handleGameCodeClick}>
+              <span className="code-text">{code}</span>
+              <span className="copy-icon">
+                <img
+                  src="/src/assets/copy-symbol.svg"
+                  alt="Copy Icon"
+                  className="copy-icon-img"
+                />
+              </span>
+            </button>
+          </div>
         </div>
       </div>
       <div className="waiting-room-content">

@@ -52,48 +52,37 @@ const SettingsPage = () => {
   };
 
   // Create room and move to game page, passing player info and settings
-    const handleCreateRoom = () => {
+  const handleCreateRoom = () => {
+    // Set up room creation listener
+    const handleRoomCreated = ({
+      code,
+      rooms,
+    }: {
+      code: string;
+      rooms: any;
+    }) => {
+      console.log(
+        "Room created successfully with code:",
+        code,
+        "in ROOMS:",
+        rooms
+      );
 
-      // Set up room creation listener
-      const handleRoomCreated = ({ code, rooms }: { code: string; rooms: any }) => {
-        console.log("Room created successfully with code:", code, 'in ROOMS:', rooms);
-        
-        // For single player mode, skip waiting room and go directly to game
-        if (settings.amountOfPlayers === 1) {
-          navigate(`/room/${code}`, {
-            state: {
-              ...settings,
-              playerName,
-              isHost: true,
-            }
-          });
-        } else {
-          navigate(`/waiting/${code}`, {
-            state: {
-              playerName,
-              isHost: true, // Mark this player as the host
-            }
-          });
-        }
-        
-        // Clean up listener after navigation
-        socket.off("room-created", handleRoomCreated);
-      };
-
-      socket.on("room-created", handleRoomCreated);
-
-      // Create the room
-      if (socket.connected) {
-        const avatarId = localStorage.getItem("avatarId") || "a1";
-        const avatarColor = localStorage.getItem("avatarColor") || "#FFD166";
-        socket.emit("create-room", { code: roomCode, settings, host: playerName, avatar: { id: avatarId, color: avatarColor } });
+      // For single player mode, skip waiting room and go directly to game
+      if (settings.amountOfPlayers === 1) {
+        navigate(`/room/${code}`, {
+          state: {
+            ...settings,
+            playerName,
+            isHost: true,
+          },
+        });
       } else {
-        // If not connected, wait for connection then emit
-        socket.on("connect", () => {
-          console.log("🔌 Connected to server with ID:", socket.id);
-          const avatarId = localStorage.getItem("avatarId") || "a1";
-          const avatarColor = localStorage.getItem("avatarColor") || "#FFD166";
-          socket.emit("create-room", { code: roomCode, settings, host: playerName, avatar: { id: avatarId, color: avatarColor } });
+        navigate(`/waiting/${code}`, {
+          state: {
+            playerName,
+            isHost: true, // Mark this player as the host
+          },
         });
       }
 
@@ -105,19 +94,25 @@ const SettingsPage = () => {
 
     // Create the room
     if (socket.connected) {
+      const avatarId = localStorage.getItem("avatarId") || "a1";
+      const avatarColor = localStorage.getItem("avatarColor") || "#FFD166";
       socket.emit("create-room", {
         code: roomCode,
         settings,
         host: playerName,
+        avatar: { id: avatarId, color: avatarColor },
       });
     } else {
       // If not connected, wait for connection then emit
       socket.on("connect", () => {
         console.log("🔌 Connected to server with ID:", socket.id);
+        const avatarId = localStorage.getItem("avatarId") || "a1";
+        const avatarColor = localStorage.getItem("avatarColor") || "#FFD166";
         socket.emit("create-room", {
           code: roomCode,
           settings,
           host: playerName,
+          avatar: { id: avatarId, color: avatarColor },
         });
       });
     }

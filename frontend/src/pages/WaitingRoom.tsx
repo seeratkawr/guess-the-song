@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { socket } from '../socket';
-import CopyButton from '../components/CopyButton';
+import { socket } from "../socket";
+import CopyButton from "../components/CopyButton";
 import Avatar1 from "../assets/avatars/avatar1.png";
 import Avatar2 from "../assets/avatars/avatar2.png";
 import Avatar3 from "../assets/avatars/avatar3.png";
 import defaultAvatar from "../assets/avatars/avatar1.png";
-import "../css/WaitingRoom.css"; 
+import "../css/WaitingRoom.css";
 
 interface PlayerObj {
   name: string;
@@ -29,7 +29,7 @@ const WaitingRoom: React.FC = () => {
 
   const playerName = state?.playerName || "Player";
   const isHost = state?.isHost || false;
-  
+
   const [players, setPlayers] = useState<PlayerObj[]>([]);
   const [amountOfPlayersInRoom, setAmountOfPlayersInRoom] = useState(0);
 
@@ -43,7 +43,11 @@ const WaitingRoom: React.FC = () => {
 
     const avatarId = localStorage.getItem("avatarId") || "a1";
     const avatarColor = localStorage.getItem("avatarColor") || "#FFD166";
-    socket.emit("join", { code, playerName, avatar: { id: avatarId, color: avatarColor } });
+    socket.emit("join", {
+      code,
+      playerName,
+      avatar: { id: avatarId, color: avatarColor },
+    });
 
     socket.on("join-error", ({ message }) => {
       alert(message);
@@ -200,33 +204,61 @@ const WaitingRoom: React.FC = () => {
             <div className="single-player">
               <div
                 className={`player-item ${
-                  players[0] === playerName ? "current-player" : ""
+                  players.length > 0 && players[0].name === playerName
+                    ? "current-player"
+                    : ""
                 }`}
               >
-                {players[0]}{" "}
-                {players[0] === playerName && isHost ? "(Host)" : ""}
+                {players.length > 0 ? players[0].name : "Loading..."}{" "}
+                {players.length > 0 && players[0].name === playerName && isHost
+                  ? "(Host)"
+                  : ""}
               </div>
             </div>
           ) : (
             <ul className="players-list">
               {players.map((player) => {
-                const avatarId = typeof player.avatar === "string" ? player.avatar : (player.avatar?.id || "a1");
-                const avatarSrc = avatarId === "a2" ? Avatar2 : avatarId === "a3" ? Avatar3 : Avatar1;
+                const avatarId =
+                  typeof player.avatar === "string"
+                    ? player.avatar
+                    : player.avatar?.id || "a1";
+                const avatarSrc =
+                  avatarId === "a2"
+                    ? Avatar2
+                    : avatarId === "a3"
+                    ? Avatar3
+                    : Avatar1;
                 return (
-                  <li key={player.name} className={`player-item ${player.name === playerName ? 'current-player' : ''}`}>
-                    <div style={{
-                      width: 36,
-                      height: 36,
-                      marginRight: 8,
-                      borderRadius: "50%",
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: (typeof player.avatar === 'object' && player.avatar?.color) ? player.avatar.color : 'transparent'
-                    }}>
-                      <img src={avatarSrc} alt={`${player.name} avatar`} style={{ width: 28, height: 28, borderRadius: "50%" }} />
+                  <li
+                    key={player.name}
+                    className={`player-item ${
+                      player.name === playerName ? "current-player" : ""
+                    }`}
+                  >
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        marginRight: 8,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor:
+                          typeof player.avatar === "object" &&
+                          player.avatar?.color
+                            ? player.avatar.color
+                            : "transparent",
+                      }}
+                    >
+                      <img
+                        src={avatarSrc}
+                        alt={`${player.name} avatar`}
+                        style={{ width: 28, height: 28, borderRadius: "50%" }}
+                      />
                     </div>
-                    {player.name} {player.name === playerName && isHost ? '(Host)' : ''}
+                    {player.name}{" "}
+                    {player.name === playerName && isHost ? "(Host)" : ""}
                   </li>
                 );
               })}

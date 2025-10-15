@@ -303,7 +303,7 @@ io.on("connection", (socket) => {
   });
 
   // host distributes round data to all players
-  socket.on("host-start-round", ({ code, song, choices, answer, startTime }) => {
+  socket.on("host-start-round", ({ code, song, choices, answer, startTime, songIndex, multiSongs }) => {
     const room = rooms.get(code);
     if (!room) {
       console.log(`Host tried to start round in room ${code}`);
@@ -333,7 +333,9 @@ io.on("connection", (socket) => {
       song, 
       choices, 
       answer, 
-      startTime: room.roundStartTime 
+      startTime: startTime || Date.now(),
+      songIndex,
+      multiSongs 
     });
   });
 

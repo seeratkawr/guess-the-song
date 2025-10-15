@@ -51,7 +51,9 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ players = [] }) => {
             <div className="player-rank">{renderRank(index)}</div>
             <div className="player-info">
               <span className="player-name">{player.name}</span>
-              <span className="player-points">{player.points} points</span>
+              <span className="current-player-points">
+                {player.points} points
+              </span>
             </div>
           </div>
         ))

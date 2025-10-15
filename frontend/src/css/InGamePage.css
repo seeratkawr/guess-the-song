@@ -30,6 +30,12 @@ html {
   background-image: url(../assets/Background.png);
 }
 
+.scoreboard {
+  width: calc(100% - 30vw); /* Account for 15vw padding on both sides */
+  max-width: 800px;
+  margin: 2rem 0 2rem 12vw; /* Left margin matches header left padding */
+}
+
 .choose-song-container {
   flex: 0.75;
   text-align: center;

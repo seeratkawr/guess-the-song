@@ -17,25 +17,28 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: flex-start;
   gap: 4px;
   color: #ffffff;
   position: absolute; /* Add this */
   left: 15vw; /* Position at left edge */
+  top: 5vh;
 }
 
 .header-center {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   text-align: center;
   white-space: nowrap;
+  padding-top: 0;
   /* Remove any positioning - let it be naturally centered */
 }
 
 .header-right {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   color: #ffffff;
   position: absolute; /* Add this */
@@ -118,6 +121,7 @@
   color: #ffffff;
   margin: 0;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .invite-container {

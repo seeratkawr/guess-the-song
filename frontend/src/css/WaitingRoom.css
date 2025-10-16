@@ -16,10 +16,10 @@
   overflow-x: hidden;
 }
 
-.header-section {
+.waiting-header-section {
   width: 100%;
   display: flex;
-  justify-content: center; /* Change from space-between to center */
+  justify-content: space-between; /* Change back to space-between */
   align-items: center;
   padding: 5vh 15vw;
   background-color: transparent;
@@ -28,36 +28,37 @@
   flex-wrap: nowrap;
   gap: 20px;
   overflow: hidden;
-  position: relative; /* Add this for absolute positioning */
+  position: relative;
 }
 
-.header-left {
+.waiting-header-left {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   color: #ffffff;
-  position: absolute; /* Add this */
-  left: 15vw; /* Position at left edge */
+  flex: 1; /* Add this */
+  min-width: 0; /* Add this */
 }
 
-.header-center {
+.waiting-header-center {
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
   white-space: nowrap;
-  /* Remove any positioning - let it be naturally centered */
+  flex: 0 0 auto; /* Add this - don't grow or shrink */
 }
 
-.header-right {
+.waiting-header-right {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
   color: #ffffff;
-  position: absolute; /* Add this */
-  right: 15vw; /* Position at right edge */
+  flex: 1; /* Add this */
+  justify-content: flex-end; /* Add this */
+  min-width: 0; /* Add this */
 }
 
 .waiting-room-label,

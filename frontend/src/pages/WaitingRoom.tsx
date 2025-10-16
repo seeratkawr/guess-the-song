@@ -155,16 +155,16 @@ const WaitingRoom: React.FC = () => {
 
   return (
     <div className="waiting-room-container">
-      <div className="header-section">
-        <div className="header-left">
+      <div className="waiting-header-section">
+        <div className="waiting-header-left">
           <div className="waiting-room-label">WAITING ROOM</div>
         </div>
 
-        <div className="header-center">
+        <div className="waiting-header-center">
           <h1 className="title">Guessify</h1>
         </div>
 
-        <div className="header-right">
+        <div className="waiting-header-right">
           <div className="game-code-section">
             <span className="invite-text">INVITE CODE:</span>
             <button className="game-code-button" onClick={handleGameCodeClick}>

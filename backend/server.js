@@ -75,6 +75,7 @@ io.on("connection", (socket) => {
         isRoundActive: false,
         isIntermission: false,
         roundStartTime: null,
+        finishedPlayers: new Set()
       }
       rooms.set(code, room);
       
@@ -259,32 +260,6 @@ io.on("connection", (socket) => {
   }
 });
 
-  // Handle host continuing to next round
-  socket.on("host-continue-round", ({ code, nextRound, totalRounds }) => {
-    console.log(`Host in room ${code} continuing to round ${nextRound}`);
-    const room = rooms.get(code);
-    if (room) {
-      // update authoritative round state on server
-      room.currentRound = nextRound;
-      room.isRoundActive = true;
-      room.isIntermission = false;
-      room.roundStartTime = Date.now();
-    }
-    
-    // Emit to all players in the room (including host)
-    socket.to(code).emit("continue-to-next-round", { nextRound });
-    socket.emit("continue-to-next-round", { nextRound }); // Also send to host
-  });
-
-  // Handle host ending the game
-  socket.on("host-end-game", ({ code }) => {
-    console.log(`Host in room ${code} ending the game`);
-    
-    // Navigate all players to end game page
-    socket.to(code).emit("navigate-to-end-game");
-    socket.emit("navigate-to-end-game"); // Also send to host
-  });
-
   // host starts game event
   socket.on("start-game", ({ code }) => {
     const room = rooms.get(code);
@@ -303,7 +278,7 @@ io.on("connection", (socket) => {
   });
 
   // host distributes round data to all players
-  socket.on("host-start-round", ({ code, song, choices, answer, startTime, songIndex, multiSongs }) => {
+  socket.on("host-start-round", ({ code, song, choices, answer, startTime, songIndex, multiSongs, shuffleSeed }) => {
     const room = rooms.get(code);
     if (!room) {
       console.log(`Host tried to start round in room ${code}`);
@@ -323,38 +298,40 @@ io.on("connection", (socket) => {
     // Ensure currentRound defaults to 1 if undefined
     room.currentRound = room.currentRound || 1;
 
-    // --- Persist the current round payload so late joiners can request it ---
-    room.currentRoundData = { song, choices, answer };
+    // reset finished players for this round
+    room.finishedPlayers = new Set();
 
-    console.log(`Host starting round in room ${code} with song:`, song?.title);
-    
-    // Send round data to all players in the room
-    io.to(code).emit("round-start", { 
-      song, 
-      choices, 
-      answer, 
-      startTime: startTime || Date.now(),
+    // Persist the full current round payload so late joiners can request it
+    room.currentRoundData = { song, choices, answer, songIndex, multiSongs, shuffleSeed };
+
+    console.log(`Host starting round ${room.currentRound} in room ${code} with song:`, song?.title);
+
+    // Send round data to all players in the room and include authoritative currentRound
+    io.to(code).emit("round-start", {
+      song,
+      choices,
+      answer,
+      startTime: room.roundStartTime,
       songIndex,
-      multiSongs 
+      multiSongs,
+      shuffleSeed,
+      currentRound: room.currentRound
     });
+
+    // Broadcast initial finished state (everyone remaining)
+    const remaining = room.players.length - room.finishedPlayers.size;
+    io.to(code).emit("player-finished-updated", { remaining, finishedCount: room.finishedPlayers.size });
   });
 
-  // reply with current round data for clients that missed the live event 
-  socket.on("get-current-round", (code) => {
+  // Track individual players finishing the round
+  socket.on("player-finished-round", ({ code, playerName }) => {
     const room = rooms.get(code);
-    if (!room) {
-      socket.emit("current-round", null);
-      return;
-    }
-    if (room.isRoundActive && room.currentRoundData) {
-      socket.emit("current-round", {
-        ...room.currentRoundData,
-        startTime: room.roundStartTime,
-        currentRound: room.currentRound
-      });
-    } else {
-      socket.emit("current-round", null);
-    }
+    if (!room) return;
+    if (!room.finishedPlayers) room.finishedPlayers = new Set();
+    room.finishedPlayers.add(playerName);
+    const remaining = Math.max(0, room.players.length - room.finishedPlayers.size);
+    io.to(code).emit("player-finished-updated", { remaining, finishedCount: room.finishedPlayers.size });
+    console.log(`Player finished in room ${code}: ${playerName} (remaining ${remaining})`);
   });
 
   socket.on('host-skip-round', ({ code }) => {
@@ -363,9 +340,61 @@ io.on("connection", (socket) => {
       // Host skipped - notify all players in the room to show leaderboard
       io.to(code).emit('host-skipped-round');
       console.log(`Host skipped round in room ${code}`);
+
+      // mark everyone finished for this round
+      room.finishedPlayers = new Set(room.players);
+      io.to(code).emit("player-finished-updated", { remaining: 0, finishedCount: room.players.length });
     } else {
       console.log(`Non-host tried to skip in room ${code}. Socket ID: ${socket.id}, Host Socket ID: ${room?.hostSocketId}`);
     }
+  });
+
+  // Handle host continuing to next round
+  socket.on("host-continue-round", ({ code, nextRound, totalRounds }) => {
+    console.log(`Host in room ${code} continuing to round ${nextRound}`);
+    const room = rooms.get(code);
+    if (room) {
+      // update authoritative round state on server
+      room.currentRound = nextRound;
+      room.isRoundActive = true;
+      room.isIntermission = false;
+      room.roundStartTime = Date.now();
+      // reset finished players for new round
+      room.finishedPlayers = new Set();
+    }
+    
+    // Emit to all players in the room (including host)
+    socket.to(code).emit("continue-to-next-round", { nextRound });
+    socket.emit("continue-to-next-round", { nextRound }); // Also send to host
+  });
+
+  // Handle host ending the game
+  socket.on("host-end-game", ({ code }) => {
+    console.log(`Host in room ${code} ending the game`);
+    
+    // Navigate all players to end game page
+    socket.to(code).emit("navigate-to-end-game");
+    socket.emit("navigate-to-end-game"); // Also send to host
+  });
+
+  // Allow late-joiners / recovered clients to ask for the current round payload
+  socket.on("get-current-round", (code) => {
+    socket.join(code);
+    const room = rooms.get(code);
+    if (!room || !room.currentRoundData) {
+      // No active round to recover
+      socket.emit("current-round", null);
+      return;
+    }
+
+    const payload = {
+      ...room.currentRoundData,
+      currentRound: room.currentRound || 1,
+      startTime: room.roundStartTime || Date.now(),
+    };
+
+    console.log(`Providing current-round to ${socket.id} for room ${code}:`, { currentRound: payload.currentRound, song: payload.song?.title });
+    socket.emit("current-round", payload);
   });
 
   socket.on("disconnect", () => {
@@ -377,8 +406,17 @@ io.on("connection", (socket) => {
       const playerIndex = room.players.indexOf(socket.playerName);
       if (playerIndex > -1) {
         room.players.splice(playerIndex, 1);
+        // Remove from finishedPlayers if present
+        if (room.finishedPlayers && room.finishedPlayers.has(socket.playerName)) {
+          room.finishedPlayers.delete(socket.playerName);
+        }
+
         console.log(`${socket.playerName} left room ${socket.roomCode}. Remaining players:`, room.players);
         
+        // Update remaining players count for clients
+        const remaining = Math.max(0, room.players.length - (room.finishedPlayers ? room.finishedPlayers.size : 0));
+        io.to(socket.roomCode).emit("player-finished-updated", { remaining, finishedCount: room.finishedPlayers ? room.finishedPlayers.size : 0 });
+
         // Update remaining players
         io.to(socket.roomCode).emit("players-updated", { 
           players: room.players, 

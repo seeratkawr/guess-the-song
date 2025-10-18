@@ -485,6 +485,24 @@ const InGamePage: React.FC = () => {
       setSelectedIndex(null);
     });
 
+    socket.on("players-updated", ({ playerScores, newHost }) => {
+      if (Array.isArray(playerScores)) {
+        setPlayers(playerScores);
+
+        //Update current player if they're still in the room
+        const currentPlayer = playerScores.find((p) => p.name === playerName);
+        if (currentPlayer) {
+          setPlayer(currentPlayer);
+        }
+      }
+
+      // Handle host transfer
+      if (newHost === playerName && !isHost) {
+        console.log("You are now the host!");
+        //Update local host state if needed
+      }
+    });
+
     return () => {
       socket.off("current-round");
       socket.off("room-players-scores");
@@ -493,8 +511,9 @@ const InGamePage: React.FC = () => {
       socket.off("continue-to-next-round");
       socket.off("navigate-to-end-game");
       socket.off("host-skipped-round");
+      socket.off("players-updated");
     };
-  }, [code, playerName, navigate, roundTime]);
+  }, [code, playerName, navigate, roundTime, isHost]);
 
   /* ----------------- ROUND LOGIC ----------------- */
   useEffect(() => {

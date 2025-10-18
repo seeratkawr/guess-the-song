@@ -400,6 +400,45 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("leave-room", ({ code, playerName }) => {
+    console.log(`${playerName} manually leaving room ${code}`);
+
+    const room = rooms.get(code);
+    if (room) {
+      const playerIndex = room.players.indexOf(playerName);
+      if (playerIndex > -1) {
+        // Remove player
+        room.players.splice(playerIndex, 1);
+        room.playerScores.delete(playerName);
+
+        // Handle host transfer
+        if (room.host === playerName && room.players.length > 0) {
+          room.host = room.players[0];
+          const hostSocket = [...io.sockets.sockets.values()].find(
+            (s) => s.playerName === room.host
+          );
+          if (hostSocket) {
+            room.hostSocketId = hostSocket.id;
+          }
+        }
+
+        // Update remaining players
+        const updatedScores = Array.from(room.playerScores.values());
+        io.to(code).emit("players-updated", {
+          players: room.players,
+          maxPlayers: room.maxPlayers,
+          playerScores: updatedScores,
+          newHost: room.host,
+        });
+
+        // Clean up empty rooms
+        if (room.players.length === 0) {
+          rooms.delete(code);
+        }
+      }
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
 

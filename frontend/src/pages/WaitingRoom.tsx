@@ -151,6 +151,8 @@ const WaitingRoom: React.FC = () => {
       });
     });
 
+    
+
     return () => {
       socket.off("join-error");
       socket.off("join-success");
@@ -168,6 +170,15 @@ const WaitingRoom: React.FC = () => {
       socket.emit("start-game", { code });
     }
   };
+
+  const handleLeaveRoom = () => {
+    // Notify server before leaving
+    if (socket) {
+      socket.emit("leave-room", { code, playerName });
+    }
+    navigate("/lobby", { state: { playerName } });
+  };
+
   return (
     <div className="waiting-room-container">
       <div className="gradient">
@@ -267,10 +278,7 @@ const WaitingRoom: React.FC = () => {
             amountOfPlayersInRoom === 1 ? "single-player-mode" : ""
           }`}
         >
-          <button
-            onClick={() => navigate("/lobby", { state: { playerName } })}
-            className="leave-room-button"
-          >
+          <button onClick={handleLeaveRoom} className="leave-room-button">
             Leave Room
           </button>
           {isHost ? (

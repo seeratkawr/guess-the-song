@@ -1199,7 +1199,7 @@ const InGamePage: React.FC = () => {
           />
           <button
             onClick={() => navigate("/lobby", { state: { playerName } })}
-            className="leave-room-button"
+            className="leave-game-room-button"
           >
             Leave Room
           </button>

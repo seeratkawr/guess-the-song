@@ -100,7 +100,7 @@ html {
   color: white;
 }
 
-.leave-room-button {
+.leave-game-room-button {
   position: fixed;
   bottom: 20px;
   left: 20px;
@@ -116,12 +116,12 @@ html {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.leave-room-button:hover {
+.leave-game-room-button:hover {
   background-color: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.leave-room-button:active {
+.leave-game-room-button:active {
   transform: translateY(0);
 }

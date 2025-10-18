@@ -10,8 +10,8 @@ import {
 } from "../components/Settings";
 import { socket } from "../socket";
 
-const GENRES = ["kpop", "pop", "hiphop", "edm"] as const;
-type Genre = (typeof GENRES)[number];
+const GENRES = ["kpop", "pop", "hiphop", "karaoke hits", "top hits", "r&b"] as const;
+type Genre = typeof GENRES[number];
 
 const SettingsPage = () => {
   const navigate = useNavigate();

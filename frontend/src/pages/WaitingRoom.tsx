@@ -33,6 +33,9 @@ const WaitingRoom: React.FC = () => {
   const [players, setPlayers] = useState<PlayerObj[]>([]);
   const [amountOfPlayersInRoom, setAmountOfPlayersInRoom] = useState(0);
 
+  // Track host name so everyone can see who the host is
+  const [hostName, setHostName] = useState<string | null>(null);
+
   // If a player joins mid-round, keep them in this waiting room and show banner
   const [activeGameInfo, setActiveGameInfo] = useState<any | null>(null);
   // Keep a ref so socket handlers always use the latest settings
@@ -55,16 +58,22 @@ const WaitingRoom: React.FC = () => {
     });
 
     // Handle successful join
-    socket.on("join-success", ({ playerScores, amountOfPlayersInRoom }) => {
+    socket.on("join-success", ({ playerScores, amountOfPlayersInRoom, host }) => {
       // server sends full player score objects; use them to render avatars and names
       if (Array.isArray(playerScores)) {
         setPlayers(playerScores);
       }
       setAmountOfPlayersInRoom(amountOfPlayersInRoom);
+      if (host) setHostName(host);
     });
 
     // Add this handler for joining active games
     socket.on("join-active-game", (gameSettings) => {
+      // capture host when provided
+      if (gameSettings?.host) {
+        setHostName(gameSettings.host);
+      }
+
       // If a round is active, keep the joining client in the waiting room and show banner.
       // Store the full game settings so we can merge them with subsequent round events.
       if (gameSettings?.isRoundActive) {
@@ -82,7 +91,11 @@ const WaitingRoom: React.FC = () => {
       }
     });
 
-    socket.on("game-started", (settings) => {
+
+    socket.on("game-started", (settings) => {  
+      // capture host if provided
+      if (settings?.host) setHostName(settings.host);
+
       navigate(`/room/${code}`, {
         state: {
           ...settings,

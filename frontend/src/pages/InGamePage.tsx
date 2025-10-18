@@ -35,7 +35,7 @@ const getTimeAsNumber = (time?: string | number | null): number => {
   return m ? parseInt(m[0], 10) : 30;
 };
 
-type Genre = "kpop" | "pop" | "hiphop" | "edm";
+type Genre = "kpop" | "pop" | "hiphop" | "karaoke hits" | "top hits" | "r&b";
 
 interface GuessifyProps {}
 
@@ -165,6 +165,9 @@ const InGamePage: React.FC = () => {
   const [inviteCode] = useState(code || "INVALID");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
+  // track how many players are still yet to finish this round (null = unknown)
+  const [playersRemaining, setPlayersRemaining] = useState<number | null>(null);
+
   // --- Single Song Mode ---
   const [hasGuessedCorrectly, setHasGuessedCorrectly] = useState(false);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
@@ -260,6 +263,18 @@ const InGamePage: React.FC = () => {
     // Listen for players joined the room
     socket.on("room-players-scores", (playerScores) => {
       setPlayers(playerScores);
+      // set playersRemaining to full players count by default when we get scores (server will update on round-start)
+      setPlayersRemaining(playerScores?.length ?? null);
+    });
+
+    // Listen for player-finished updates (server broadcasts how many remain)
+    socket.on("player-finished-updated", (data) => {
+      // data: { remaining, finishedCount? }
+      if (typeof data === "object" && data !== null) {
+        setPlayersRemaining(
+          typeof data.remaining === "number" ? data.remaining : null
+        );
+      }
     });
 
     // Host starts round → everyone gets the same song
@@ -476,6 +491,8 @@ const InGamePage: React.FC = () => {
       setIsIntermission(true);
       setIsTimeUp(true);
       setShowCorrectAnswer(true);
+      // mark remaining as 0 because host skipped
+      setPlayersRemaining(0);
 
       // Reset guess states to ensure clean leaderboard display
       setHasGuessedCorrectly(false);
@@ -493,6 +510,7 @@ const InGamePage: React.FC = () => {
       socket.off("continue-to-next-round");
       socket.off("navigate-to-end-game");
       socket.off("host-skipped-round");
+      socket.off("player-finished-updated");
     };
   }, [code, playerName, navigate, roundTime]);
 
@@ -510,7 +528,9 @@ const InGamePage: React.FC = () => {
     | "kpop"
     | "pop"
     | "hiphop"
-    | "edm";
+    | "karaoke hits"
+    | "top hits"
+    | "r&b";
 
   useEffect(() => {
     // Always fetch fresh songs for the selected genre to ensure correct genre is loaded
@@ -559,10 +579,11 @@ const InGamePage: React.FC = () => {
     if (isSingleSong || isGuessArtist) {
       if (currentRound === 1) {
         // For first round, get and set current song, then play it
-        const currentSongData = songService.getCurrentSong();
+        // const currentSongData = songService.getCurrentSong();
+        const { song: currentSongData, index: randomIndex } = selectRandomSong(cachedSongs);
         if (currentSongData) {
           setCurrentSong(currentSongData);
-          songService.playSong();
+          songService.playSong(randomIndex);
         }
       } else {
         // For subsequent rounds, move to next song and play it
@@ -623,49 +644,64 @@ const InGamePage: React.FC = () => {
   // Helper function for single song/artist/reverse modes
   const setupSingleSongMode = () => {
     // Safety check: ensure songs are loaded for the correct genre
-    if (!checkSongsLoaded("setupSingleSongMode")) {
-      return null;
-    }
+      if (!checkSongsLoaded("setupSingleSongMode")) {
+    return null;
+  }
 
-    const currentSongData =
-      currentRound === 1
-        ? songService.getCurrentSong()
-        : songService.getNextSong();
+  // For round 1, select randomly like Quick Guess
+  if (currentRound === 1) {
+    const allSongs = songService.getCachedSongs();
+    const { song: selectedSong, index: randomIndex } = selectRandomSong(allSongs);
 
-    if (currentSongData) {
-      let answer = currentSongData.title; // Default for single song and reverse song
+    if (selectedSong) {
+      let answer = selectedSong.title;
       if (isGuessArtist) {
-        answer = currentSongData.artist;
+        answer = selectedSong.artist;
       }
 
-      // Get the current index for consistent playback across players
-      const currentIndex =
-        currentRound === 1
-          ? songService.getCurrentIndex()
-          : (songService.getCurrentIndex() + 1) %
-            songService.getCachedSongs().length;
-
-      const roundData = {
-        song: currentSongData,
-        choices: [],
-        answer: answer,
-        songIndex: currentIndex,
-      };
-
-      // Choose the appropriate playback method
+      // Ensure host plays exactly this selection (by details to avoid index drift)
       if (isReverseSong) {
-        if (currentRound === 1) songService.playReverseSong();
-        else songService.playNextReverseSong();
-      } else if (currentRound === 1) {
-        songService.playSong();
+        songService.playReverseSongByDetails(selectedSong);
       } else {
-        songService.playNextSong();
+        songService.playSongByDetails(selectedSong);
       }
 
-      return roundData;
+      return {
+        song: selectedSong,
+        choices: [],
+        answer,
+        songIndex: randomIndex, // send exact index to clients
+      };
     }
     return null;
-  };
+  }
+
+  // Subsequent rounds: keep previous next-song behavior
+  const currentSongData = songService.getNextSong();
+  if (currentSongData) {
+    let answer = currentSongData.title; // default for single/reverse
+    if (isGuessArtist) {
+      answer = currentSongData.artist;
+    }
+
+    const currentIndex = songService.getCurrentIndex();
+
+    if (isReverseSong) {
+      songService.playNextReverseSong();
+    } else {
+      songService.playNextSong();
+    }
+
+    return {
+      song: currentSongData,
+      choices: [],
+      answer,
+      songIndex: currentIndex,
+    };
+  }
+
+  return null;
+};
 
   // Helper function for quick guess mode
   const setupQuickGuessMode = () => {
@@ -838,6 +874,13 @@ const InGamePage: React.FC = () => {
 
   /* ----------------- HANDLERS ----------------- */
 
+  // Add helper to emit that this player finished the round
+  const notifyPlayerFinished = () => {
+    if (socket) {
+      socket.emit("player-finished-round", { code, playerName });
+    }
+  };
+
   // Handle multiple choice selection
   const handleSelect = (index: number) => {
     if (selectedIndex !== null) return;
@@ -854,6 +897,7 @@ const InGamePage: React.FC = () => {
       songService.stopSong();
       setIsRoundActive(false);
       setIsIntermission(true);
+      notifyPlayerFinished(); // tell server we finished
     } else {
       setHasSelectedCorrectly(false);
       setShowCorrectAnswer(true);
@@ -862,6 +906,7 @@ const InGamePage: React.FC = () => {
       songService.stopSong();
       setIsRoundActive(false);
       setIsIntermission(true);
+      notifyPlayerFinished(); // tell server we finished even if wrong
     }
   };
 
@@ -875,6 +920,7 @@ const InGamePage: React.FC = () => {
         songService.stopSong();
         setIsRoundActive(false);
         setIsIntermission(true);
+        notifyPlayerFinished();
       } else if (isHost) {
         // Multiplayer host: skip for everyone
         socket?.emit("host-skip-round", { code });
@@ -882,6 +928,13 @@ const InGamePage: React.FC = () => {
         songService.stopSong();
         setIsRoundActive(false);
         setIsIntermission(true);
+        // host will be treated as finished; server will mark all finished in host-skip handler
+      } else {
+        // Non-host skip (maybe allowed) - notify server
+        songService.stopSong();
+        setIsRoundActive(false);
+        setIsIntermission(true);
+        notifyPlayerFinished();
       }
     }
   };
@@ -913,6 +966,7 @@ const InGamePage: React.FC = () => {
       songService.stopSong();
       setIsRoundActive(false);
       setIsIntermission(true);
+      notifyPlayerFinished(); // tell server we finished
     }
   };
 
@@ -924,6 +978,8 @@ const InGamePage: React.FC = () => {
     setIsTimeUp(true);
     setIsRoundActive(false);
     setIsIntermission(true);
+    // notify server we finished due to time end (server will likely treat this as everyone finished)
+    notifyPlayerFinished();
   }
 
   // Continue to next round or navigate to end game screen
@@ -1005,6 +1061,7 @@ const InGamePage: React.FC = () => {
     setHasPlayedSnippet(false);
     setHasGuessedArtistCorrectly(false);
     setHasGuessedReverseCorrectly(false);
+    setPlayersRemaining((prev: number | null) => prev ?? players.length); // ensure some value until server updates
 
     // Check if this is single player or multiplayer
     const isSinglePlayer = state?.amountOfPlayers === 1;
@@ -1169,6 +1226,10 @@ const InGamePage: React.FC = () => {
           playerGotCorrect={getPlayerCorrectStatus()}
           isTimeUp={isTimeUp}
           isHost={isHost}
+          // pass authoritative start time + duration so RoundScoreDisplay can compute a live countdown
+          roundStartTime={roundStartTime}
+          roundDuration={getTimeAsNumber(roundTime)}
+          playersRemaining={playersRemaining}
         />
       ) : (
         <>

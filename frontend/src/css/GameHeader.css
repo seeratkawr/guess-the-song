@@ -37,13 +37,13 @@
 .header-right {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   color: #ffffff;
   flex: 1; /* Add this */
   justify-content: flex-end; /* Add this */
   min-width: 0; /* Add this */
-  /* Remove position: absolute and positioning values */
+  padding-top: 1.5vh;
 }
 
 .round-label,

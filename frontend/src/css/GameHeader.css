@@ -1,16 +1,15 @@
 .game-header {
   width: 100%;
   display: flex;
-  justify-content: center; /* Change from space-between to center */
-  align-items: center;
+  justify-content: space-between; /* Change back to space-between */
+  align-items: flex-start; /* Change to flex-start for top alignment */
   padding: 5vh 15vw;
   background-color: transparent;
   font-family: "Segoe UI", sans-serif;
   z-index: 10;
   flex-wrap: nowrap;
-  gap: 20px;
   overflow: hidden;
-  position: relative; /* Add this for absolute positioning */
+  position: relative;
 }
 
 .header-left {
@@ -20,9 +19,9 @@
   justify-content: flex-start;
   gap: 4px;
   color: #ffffff;
-  position: absolute; /* Add this */
-  left: 15vw; /* Position at left edge */
-  top: 5vh;
+  flex: 1; /* Add this */
+  min-width: 0; /* Add this */
+  /* Remove position: absolute and positioning values */
 }
 
 .header-center {
@@ -32,7 +31,7 @@
   text-align: center;
   white-space: nowrap;
   padding-top: 0;
-  /* Remove any positioning - let it be naturally centered */
+  flex: 0 0 auto; /* Don't grow or shrink */
 }
 
 .header-right {
@@ -41,8 +40,10 @@
   align-items: flex-start;
   gap: 12px;
   color: #ffffff;
-  position: absolute; /* Add this */
-  right: 15vw; /* Position at right edge */
+  flex: 1; /* Add this */
+  justify-content: flex-end; /* Add this */
+  min-width: 0; /* Add this */
+  /* Remove position: absolute and positioning values */
 }
 
 .round-label,
